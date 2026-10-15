@@ -141,7 +141,7 @@ main{position:fixed;inset:env(safe-area-inset-top) 0 calc(56px + env(safe-area-i
         <button class="btn alt" id="test" type="button">Test connection</button>
         <div id="set-msg" class="hint"></div>
       </div>
-      <p class="hint">Longer mode generates linked 10s clips in order (smooth story beats), then stitches them for continuous playback.</p>
+      <p class="hint">Longer mode generates linked 10s clips, then stitches them. Free GPU quota required per scene.</p>
       <button class="btn ghost danger" id="wipe" type="button">Erase all videos</button>
     </div>
   </section>
@@ -152,7 +152,7 @@ main{position:fixed;inset:env(safe-area-inset-top) 0 calc(56px + env(safe-area-i
   <button data-v="set" type="button"><b>⚙</b>Setup</button>
 </nav>
 <script type="module">
-import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client@1.14.2/+esm";
+import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client@1.15.0/+esm";
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const LS=k=>localStorage.getItem(k)||"";
@@ -186,16 +186,38 @@ setSec(5);
 function loadSet(){$("#tok").value=LS("pulse_tok")}
 function refreshPills(){const tok=LS("pulse_tok").trim().startsWith("hf_");const p=$("#pill-tok");p.className="pill "+(tok?"ok":"warn");p.innerHTML=`<span class="dot"></span> ${tok?"Token ready":"Add token"}`}
 $("#save").onclick=()=>{localStorage.pulse_tok=$("#tok").value.trim();$("#set-msg").textContent="Saved.";$("#set-msg").style.color="var(--ok)";refreshPills()};
-$("#test").onclick=async()=>{$("#set-msg").style.color="var(--muted)";$("#set-msg").textContent="Connecting…";try{const app=await connectSpace("Lightricks/LTX-2-3");await app.view_api();$("#set-msg").style.color="var(--ok)";$("#set-msg").textContent="Connected. Ready."}catch(e){$("#set-msg").style.color="var(--hot)";$("#set-msg").textContent=String(e.message||e)}};
+$("#test").onclick=async()=>{$("#set-msg").style.color="var(--muted)";$("#set-msg").textContent="Connecting…";try{const app=await connectSpace("Lightricks/LTX-2-3");await app.view_api();$("#set-msg").style.color="var(--ok)";$("#set-msg").textContent="Connected. Ready."}catch(e){$("#set-msg").style.color="var(--hot)";$("#set-msg").textContent=friendlyErr(e)}};
 $("#wipe").onclick=async()=>{if(!confirm("Erase every saved video?"))return;for(const i of await all())await del(i.id);renderFeed();show("feed")};
+async function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+function friendlyErr(e){
+  const m=String(e&&e.message||e||"");
+  if(/Load failed|Failed to fetch|NetworkError|network/i.test(m))return "Network error (Space waking or blocked). Retry in a moment.";
+  if(/401|403|unauthorized|token/i.test(m))return "Token rejected — re-save your hf_ token in Setup.";
+  if(/quota|rate|429|GPU|busy|queue/i.test(m))return "Free GPU busy or quota hit — wait a few minutes.";
+  return m.slice(0,140);
+}
 async function connectSpace(name){
   const tok=LS("pulse_tok").trim();
   if(!tok.startsWith("hf_"))throw new Error("Add your hf_ token in Setup first.");
-  const direct="https://"+name.toLowerCase().replace(/[/_.]+/g,"-")+".hf.space";
+  const slug=name.toLowerCase().replace(/[/_.]+/g,"-");
+  const direct="https://"+slug+".hf.space";
+  try{await fetch(direct+"/config",{mode:"cors",cache:"no-store"})}catch(_){}
+  try{await fetch(direct+"/",{mode:"no-cors",cache:"no-store"})}catch(_){}
   let last;
-  for(const ref of [name,direct]){try{return await Client.connect(ref,{hf_token:tok})}catch(e){last=e}}
-  for(const ref of [name,direct]){try{return await Client.connect(ref,{token:tok})}catch(e){last=e}}
-  throw last||new Error("Could not connect to "+name);
+  const attempts=[
+    ()=>Client.connect(name,{hf_token:tok}),
+    ()=>Client.connect(direct,{hf_token:tok}),
+    ()=>Client.connect(name,{token:tok}),
+    ()=>Client.connect(direct,{token:tok}),
+  ];
+  for(let round=0;round<2;round++){
+    for(const fn of attempts){
+      try{return await fn()}catch(e){last=e}
+    }
+    await sleep(1500*(round+1));
+    try{await fetch(direct+"/config",{mode:"cors",cache:"no-store"})}catch(_){}
+  }
+  throw new Error(friendlyErr(last)||("Could not connect to "+name));
 }
 function findVideo(data,spaceUrl){
   const out=[];
@@ -257,13 +279,13 @@ const BACKENDS=[
   {id:"ltx-dist",label:"LTX distilled",space:"Lightricks/ltx-video-distilled",maxDur:10,
     async run(app,prompt,ar,dur){
       const d=Math.min(+dur||10,10);const pair=hqSize(ar);const w=pair[0],h=pair[1];const seed=Math.floor(Math.random()*1e9);
-      try{const result=await app.predict("/text_to_video",[prompt,"blurry, low quality, watermark, hard cut, jump cut",null,null,h,w,"text_to_video",d,9,seed,true,4,true]);return result&&result.data!==undefined?result.data:result;}
+      try{const result=await app.predict("/text_to_video",[prompt,"blurry, low quality, watermark, hard cut",null,null,h,w,"text_to_video",d,9,seed,true,4,true]);return result&&result.data!==undefined?result.data:result;}
       catch(e){const result=await app.predict("/text_to_video",{prompt:prompt,negative_prompt:"blurry, low quality, watermark",height_ui:h,width_ui:w,mode:"text_to_video",duration_ui:d,seed_ui:seed,randomize_seed:true});return result&&result.data!==undefined?result.data:result;}
     }},
   {id:"wan",label:"Wan",space:"multimodalart/wan2-1-fast",maxDur:10,
     async run(app,prompt,ar,dur){
       const d=Math.min(+dur||10,10);const pair=hqSize(ar);const w=pair[0],h=pair[1];const seed=Math.floor(Math.random()*1e9);
-      try{const result=await app.predict("/generate_video",[null,prompt,h,w,"blurry, low quality, watermark, hard cut",d,5,24,seed,true]);return result&&result.data!==undefined?result.data:result;}
+      try{const result=await app.predict("/generate_video",[null,prompt,h,w,"blurry, low quality, watermark",d,5,24,seed,true]);return result&&result.data!==undefined?result.data:result;}
       catch(e){const result=await app.predict("/generate_video",{prompt:prompt,height:h,width:w,negative_prompt:"blurry, low quality",duration_seconds:d,guidance_scale:5,steps:24,seed:seed,randomize_seed:true});return result&&result.data!==undefined?result.data:result;}
     }},
   {id:"zeroscope",label:"Zeroscope",space:"hysts/zeroscope-v2",maxDur:10,
@@ -272,20 +294,21 @@ const BACKENDS=[
       const result=await app.predict("/run",[prompt,seed,frames,35]);return result&&result.data!==undefined?result.data:result;
     }}
 ];
-async function genOneClip(prompt,ar,segDur){
-  let lastErr;
+async function genOneClip(prompt,ar,segDur,onTry){
+  const errors=[];
   for(const b of BACKENDS){
     try{
+      if(onTry)onTry(b.label);
       const app=await connectSpace(b.space);
       const spaceUrl="https://"+b.space.toLowerCase().replace(/[/_.]+/g,"-")+".hf.space";
       const data=await b.run(app,prompt,ar,Math.min(segDur,b.maxDur||10));
       const url=findVideo(data,spaceUrl);
-      if(!url){lastErr=b.label+": no video";continue}
+      if(!url){errors.push(b.label+": no video returned");continue}
       const blob=await fetchBlob(url);
       return {blob,backend:b.id,label:b.label};
-    }catch(e){lastErr=b.label+": "+(e.message||e)}
+    }catch(e){errors.push(b.label+": "+friendlyErr(e))}
   }
-  throw new Error(lastErr||"All backends failed");
+  throw new Error(errors.join("\n")||"All backends failed");
 }
 async function stitchBlobs(blobs,onProg){
   if(blobs.length===1)return blobs[0];
@@ -338,7 +361,7 @@ async function generate(){
   try{
     for(let i=0;i<segs.length;i++){
       stat("Scene "+(i+1)+"/"+segs.length+" · generating ~"+segDur+"s\n(linked continuous story)…");
-      const clip=await genOneClip(segs[i],ar,segDur);
+      const clip=await genOneClip(segs[i],ar,segDur,label=>stat("Scene "+(i+1)+"/"+segs.length+" · "+label+"\nConnecting / generating…"));
       blobs.push(clip.blob);
       stat("Scene "+(i+1)+"/"+segs.length+" done via "+clip.label+(i<segs.length-1?"\nStarting next linked scene…":""));
     }
@@ -374,7 +397,7 @@ async function generate(){
     $("#out").classList.add("on");
     stat("Done · "+segs.length+" scene"+(segs.length>1?"s":"")+" · ~"+totalSec+"s target.\nOpen Library to rewatch.",false,true);
   }catch(e){
-    stat("Failed: "+(e.message||e)+"\n\nIf longer mode stops mid-way, try Default 10s first or wait for GPU quota.",true);
+    stat("Could not generate.\n\n"+(e.message||e)+"\n\nTips:\n• Open Setup → Test connection\n• Wait 1–2 min for free GPU\n• Try 5 sec first\n• Reload if network drops",true);
   }
   busy=false;btn.disabled=false;btn.classList.remove("busy");
 }
