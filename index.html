@@ -258,7 +258,7 @@ $("#inspect").onclick=async()=>{
 };
 
 /* ---------- generation ---------- */
-const SIZES={"9:16":[480,832],"16:9":[832,480],"1:1":[640,640]};
+const SIZES={"9:16":[512,768],"16:9":[768,512],"1:1":[768,768]};
 function pickEndpoint(eps){
   const want=LS("api").trim(),keys=Object.keys(eps);
   if(want){
@@ -342,7 +342,16 @@ async function generate(prompt){
   const u=findVideo(result);
   if(!u){
     let raw="";try{raw=JSON.stringify(result)}catch{raw=String(result)}
-    throw new Error("The Space finished but returned no video I recognise.\nEndpoint used: "+ep+"\nSent: "+JSON.stringify(payload).slice(0,300)+"\nGot: "+raw.slice(0,500)+"\n\nIf the endpoint looks wrong, set the endpoint name in Setup (Check this Space lists them).");
+    const nullOut=Array.isArray(result)?result.some(x=>x==null):result==null;
+    throw new Error(
+      (nullOut
+        ?"The Space ran but returned no video (null). Common causes: resolution the model rejects, GPU timeout/OOM, or daily ZeroGPU quota.\n"
+        :"The Space finished but returned no video I recognise.\n")+
+      "Endpoint used: "+ep+"\n"+
+      "Sent: "+JSON.stringify(payload).slice(0,300)+"\n"+
+      "Got: "+raw.slice(0,500)+"\n\n"+
+      "Tips: use Shape Vertical 9:16 (512×768), Seconds 3–5, and Check this Space in Setup. If the endpoint looks wrong, set its name there."
+    );
   }
   stat("Saving...");
   const blob=await fetchBlob(u);
