@@ -90,7 +90,7 @@ nav button.on{color:var(--tape)}
         <select id="ar"><option value="9:16">Vertical 9:16</option><option value="16:9">Wide 16:9</option><option value="1:1">Square 1:1</option></select>
       </label>
       <label>Seconds
-        <select id="dur"><option>3</option><option selected>5</option><option>8</option></select>
+        <select id="dur"><option selected>3</option><option>5</option><option>8</option></select>
       </label>
     </div>
     <label>Avoid <input id="neg" placeholder="blurry, text, watermark, distorted"></label>
@@ -177,9 +177,7 @@ async function renderFeed(){
   for(const it of items){
     const u=URL.createObjectURL(it.blob);urls.push(u);
     const d=document.createElement("div");d.className="reel";
-    d.innerHTML=`<video src="${u}" playsinline muted loop preload="metadata"></video>
-      <div class="cap"></div>
-      <div class="side"><button class="fav${it.fav?" on":""}" title="Favorite">♥</button><button class="rmx" title="Remix">↻</button><button class="shr" title="Share">⇪</button><button class="dl" title="Delete">✕</button></div>`;
+    d.innerHTML=`<video src="${u}" playsinline muted loop preload="metadata"></video>\n      <div class="cap"></div>\n      <div class="side"><button class="fav${it.fav?" on":""}" title="Favorite">♥</button><button class="rmx" title="Remix">↻</button><button class="shr" title="Share">⇪</button><button class="dl" title="Delete">✕</button></div>`;
     d.querySelector(".cap").textContent=it.prompt;
     const v=d.querySelector("video");
     v.onclick=()=>{v.muted=!v.muted};
@@ -237,7 +235,7 @@ $("#wipe").onclick=async()=>{if(confirm("Erase every saved video on this phone?"
 async function connect(){
   const space=(LS("space")||DEFAULT_SPACE).trim().replace(/^https?:\/\/huggingface\.co\/spaces\//,"").replace(/\/+$/,"");
   const tok=LS("tok").trim().replace(/\s+/g,"");
-  const direct=space.startsWith("http")?space:"https://"+space.toLowerCase().replace(/[\/_.]/g,"-")+".hf.space";
+  const direct=space.startsWith("http")?space:"https://"+space.toLowerCase().replace(/[\/_.]+/g,"-")+".hf.space";
   const tries=[];
   if(tok.startsWith("hf_"))tries.push([space,{token:tok}],[direct,{token:tok}]);
   tries.push([space,{}],[direct,{}]);
@@ -268,7 +266,6 @@ function pickEndpoint(eps){
     const loose=keys.find(k=>k.toLowerCase()===n.toLowerCase());
     if(loose)return loose;
   }
-  /* prefer endpoints whose declared output is a Video, so helper endpoints never get picked */
   const retVideo=k=>(eps[k].returns||[]).some(r=>/video/i.test([r.component,r.label,r.type&&r.type.type,r.python_type&&r.python_type.description].join(" ")));
   const vids=keys.filter(retVideo),pool=vids.length?vids:keys;
   return pool.find(k=>/(t2v|text.?to.?video|generate)/i.test(k))||pool[0];
@@ -277,17 +274,23 @@ function buildPayload(params,o){
   const p={};let usedPrompt=false;
   for(const q of params){
     const n=q.parameter_name,l=(q.label||n).toLowerCase()+" "+n.toLowerCase();
-    const isStr=(q.python_type?.type||q.type?.type||"")==="str"||/textbox/.test(q.component||"");
-    let v=q.parameter_has_default?q.parameter_default:null;
+    const comp=(q.component||"").toLowerCase();
+    const py=(q.python_type?.type||q.type?.type||"").toLowerCase();
+    const isStr=py==="str"||/textbox/.test(comp);
+    const isImg=/image|file/.test(comp)||/image|pil|ndarray/.test(py)||/image|img/.test(l);
+    if(isImg&&!o.image)continue;
+    let v=q.parameter_has_default?q.parameter_default:undefined;
     if(isStr&&/neg/.test(l))v=o.neg;
     else if(isStr&&!usedPrompt&&/(prompt|text|descr|caption)/.test(l)){v=o.prompt;usedPrompt=true}
     else if(/seed/.test(l)&&!/rand/.test(l))v=Math.floor(Math.random()*2147483647);
     else if(/width/.test(l))v=o.w;
     else if(/height/.test(l))v=o.h;
-    else if(/(duration|seconds|length)/.test(l)&&!/frame/.test(l))v=o.dur;
+    else if(/(duration|seconds|length)/.test(l)&&!/frame/.test(l))v=Math.min(+o.dur||3,8);
+    else if(/enhance.?prompt/.test(l))v=false;
+    if(v===undefined||v===null)continue;
     p[n]=v;
   }
-  if(!usedPrompt){const f=params.find(q=>(q.python_type?.type||"")==="str");if(f)p[f.parameter_name]=o.prompt}
+  if(!usedPrompt){const f=params.find(q=>(q.python_type?.type||"")==="str"&&!/neg/.test((q.label||q.parameter_name)+""));if(f)p[f.parameter_name]=o.prompt}
   let ov={};try{ov=JSON.parse(LS("ovr")||"{}")}catch{}
   return {...p,...ov};
 }
@@ -305,52 +308,81 @@ function collectFiles(d,out,depth=0){
   }
   return out;
 }
-function findVideo(d){
+function findVideo(d,spaceRef){
   const f=collectFiles(d,[]);
   const isVid=x=>VEXT.test(x.url||"")||VEXT.test(x.path||"")||VEXT.test(x.name||"")||/video/i.test(x.mime||"");
-  const hit=f.find(x=>isVid(x)&&x.url)||f.find(x=>x.url&&x.url.startsWith("http")&&!/\.(png|jpe?g|gif|webp|json|txt)(\?|$)/i.test(x.url));
-  return hit?hit.url:null;
+  let hit=f.find(x=>isVid(x)&&(x.url||x.path))||f.find(x=>x.url&&x.url.startsWith("http")&&!/\.(png|jpe?g|gif|webp|json|txt)(\?|$)/i.test(x.url));
+  if(!hit)return null;
+  let u=hit.url||hit.path;
+  if(!u)return null;
+  if(/^https?:\/\//i.test(u)||u.startsWith("blob:"))return u;
+  const base=(spaceRef||"").replace(/\/?$/,"");
+  if(u.startsWith("file=")||u.startsWith("/file=")||u.startsWith("/tmp")||u.startsWith("tmp/")){
+    const path=u.replace(/^\/?file=/,"");
+    if(base.startsWith("http"))return base+"/gradio_api/file="+encodeURIComponent(path).replace(/%2F/g,"/");
+    return "https://"+String(spaceRef||"").toLowerCase().replace(/[\/_.]+/g,"-")+".hf.space/gradio_api/file="+path;
+  }
+  if(u.startsWith("/")&&base.startsWith("http"))return base+u;
+  return u;
 }
 async function fetchBlob(u){
+  const tok=LS("tok").trim();
+  const opts=tok.startsWith("hf_")?{headers:{Authorization:"Bearer "+tok}}:{};
   let r;
-  try{r=await fetch(u)}catch{r=await fetch(u,{headers:{Authorization:"Bearer "+LS("tok")}})}
-  if(!r.ok)throw new Error("Download failed ("+r.status+")");
+  try{r=await fetch(u,opts)}catch{r=await fetch(u,opts)}
+  if(!r||!r.ok)throw new Error("Download failed ("+(r&&r.status||"network")+") for "+String(u).slice(0,120));
   const b=await r.blob();
-  return b.type.startsWith("video")?b:new Blob([b],{type:"video/mp4"});
+  return (b.type&&b.type.startsWith("video"))?b:new Blob([b],{type:"video/mp4"});
 }
 const stat=(t,err)=>{const s=$("#stat");s.className="on"+(err?" err":"");s.textContent=t};
 let busy=false,roulette=false,wake=null;
 
 async function generate(prompt){
-  const ar=$("#ar").value,[w,h]=SIZES[ar];
-  const o={prompt,neg:$("#neg").value||"blurry, distorted, watermark, text",w,h,dur:+$("#dur").value};
+  const ar=$("#ar").value,[w,h]=SIZES[ar]||SIZES["9:16"];
+  let dur=Math.min(+$("#dur").value||3,8);
+  const spaceName=(LS("space")||DEFAULT_SPACE).trim().replace(/^https?:\/\/huggingface\.co\/spaces\//,"").replace(/\/+$/,"");
+  const direct="https://"+spaceName.toLowerCase().replace(/[\/_.]+/g,"-")+".hf.space";
   stat("Connecting to your Space...");
   const app=await connect(),api=await app.view_api(),eps=api.named_endpoints||{};
   const ep=pickEndpoint(eps);
   if(!ep)throw new Error("That Space has no usable endpoint. Try Check this Space in Setup.");
-  const payload=buildPayload(eps[ep].parameters,o);
-  let result=null;
-  const t0=Date.now();
-  for await(const m of app.submit(ep,payload)){
-    if(m.type==="status"){
-      const q=m.position!=null?"Queue spot "+(m.position+1)+"\n":"";
-      stat(q+(m.stage==="error"?"Error":"Rendering")+"... "+Math.round((Date.now()-t0)/1000)+"s"+(m.eta?"  (about "+Math.round(m.eta)+"s left)":""),m.stage==="error");
-      if(m.stage==="error")throw new Error(m.message||"The Space returned an error. If it mentions quota, wait or use a free token.");
+  const attempts=[{w,h,dur},{w,h,dur:3},{w:512,h:768,dur:3}];
+  let lastErr=null,u=null,result=null,payload=null;
+  for(let i=0;i<attempts.length;i++){
+    const a=attempts[i];
+    const o={prompt,neg:$("#neg").value||"blurry, distorted, watermark, text",w:a.w,h:a.h,dur:a.dur};
+    payload=buildPayload(eps[ep].parameters,o);
+    result=null;
+    const t0=Date.now();
+    try{
+      for await(const m of app.submit(ep,payload)){
+        if(m.type==="status"){
+          const q=m.position!=null?"Queue spot "+(m.position+1)+"\n":"";
+          const tag=i?"Retry "+i+" · ":"";
+          stat(tag+q+(m.stage==="error"?"Error":"Rendering")+"... "+Math.round((Date.now()-t0)/1000)+"s"+(m.eta?"  (about "+Math.round(m.eta)+"s left)":""),m.stage==="error");
+          if(m.stage==="error")throw new Error(m.message||"The Space returned an error. If it mentions quota, wait a bit and try again.");
+        }
+        if(m.type==="data")result=m.data;
+      }
+      u=findVideo(result,direct);
+      if(u)break;
+      lastErr="null video";
+      if(i<attempts.length-1){stat("No video back — retrying with safer settings...");continue}
+    }catch(e){
+      lastErr=e.message||String(e);
+      if(i<attempts.length-1){stat("Failed — retrying with safer settings...");continue}
+      throw e;
     }
-    if(m.type==="data")result=m.data;
   }
-  const u=findVideo(result);
   if(!u){
     let raw="";try{raw=JSON.stringify(result)}catch{raw=String(result)}
-    const nullOut=Array.isArray(result)?result.some(x=>x==null):result==null;
     throw new Error(
-      (nullOut
-        ?"The Space ran but returned no video (null). Common causes: resolution the model rejects, GPU timeout/OOM, or daily ZeroGPU quota.\n"
-        :"The Space finished but returned no video I recognise.\n")+
-      "Endpoint used: "+ep+"\n"+
-      "Sent: "+JSON.stringify(payload).slice(0,300)+"\n"+
-      "Got: "+raw.slice(0,500)+"\n\n"+
-      "Tips: use Shape Vertical 9:16 (512×768), Seconds 3–5, and Check this Space in Setup. If the endpoint looks wrong, set its name there."
+      "The Space ran but returned no video.\n"+
+      "Endpoint: "+ep+"\n"+
+      "Sent: "+JSON.stringify(payload).slice(0,280)+"\n"+
+      "Got: "+raw.slice(0,400)+"\n"+
+      (lastErr&&lastErr!=="null video"?"Detail: "+lastErr+"\n":"")+
+      "\nUsually this is ZeroGPU quota or the Space is busy. Wait a minute and try again (3s is most reliable)."
     );
   }
   stat("Saving...");
