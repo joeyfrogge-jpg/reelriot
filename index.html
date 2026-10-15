@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="FRANK">
 <meta name="theme-color" content="#050505">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <title>FRANK — Unhinged AI Video</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,12 +73,15 @@ textarea:disabled,select:disabled,input:disabled{opacity:.55}
 .chip:active{border-color:var(--frank);color:var(--frank)}
 .hint{font-size:12px;color:var(--muted);line-height:1.45;margin:0}
 .tag{display:inline-block;padding:3px 8px;border-radius:6px;background:rgba(255,61,0,.15);color:var(--frank);font-size:11px;font-weight:700;font-family:var(--mono);letter-spacing:.04em}
+.actions{display:grid;grid-template-columns:1fr auto;gap:8px}
 nav{position:fixed;left:0;right:0;bottom:0;padding:8px 0 calc(8px + env(safe-area-inset-bottom));background:rgba(14,14,16,.95);backdrop-filter:blur(14px);display:flex;border-top:1px solid var(--line);z-index:5}
 nav button{flex:1;border:0;background:none;color:var(--muted);font-size:11px;font-weight:600;display:grid;place-content:center;gap:2px;padding:6px}
 nav button b{font-size:20px;line-height:1;font-weight:400}
 nav button.on{color:var(--frank)}
 main{position:fixed;inset:env(safe-area-inset-top) 0 calc(56px + env(safe-area-inset-bottom)) 0;display:flex;flex-direction:column}
 .seg-list{display:grid;gap:10px}
+#cancel{display:none;min-height:52px;padding:0 16px}
+#cancel.on{display:inline-flex}
 </style>
 </head>
 <body>
@@ -93,9 +97,9 @@ main{position:fixed;inset:env(safe-area-inset-top) 0 calc(56px + env(safe-area-i
   <section class="view on" id="v-make">
     <div class="pad">
       <h2>Tell Frank what to film</h2>
-      <p class="lead">No Hugging Face. FRANK turns your prompt into video. Duration locks when you hit Generate.</p>
+      <p class="lead">Puter powers real AI video. First Generate may open a Puter sign-in popup — allow it, then wait.</p>
       <div class="card">
-        <label>Prompt<textarea id="prompt" placeholder="A raccoon in a tiny suit conducting an orchestra of flamingos in a thunderstorm, cinematic, unhinged energy" rows="4"></textarea></label>
+        <label>Prompt<textarea id="prompt" placeholder="A raccoon in a tiny suit conducting flamingos in a thunderstorm, cinematic" rows="4"></textarea></label>
         <div class="chips" id="ideas">
           <button class="chip" type="button" data-p="Neon kaiju breakdancing on a rainy Tokyo rooftop at night, dynamic camera, cinematic lighting">Kaiju dance</button>
           <button class="chip" type="button" data-p="A rubber duck leading a motorcycle gang through the desert at golden hour, wide shot, absurd comedy">Duck gang</button>
@@ -125,9 +129,12 @@ main{position:fixed;inset:env(safe-area-inset-top) 0 calc(56px + env(safe-area-i
         <button type="button" data-sec="120">120 sec<br><span style="font-size:11px;font-weight:500;opacity:.7">12× clips</span></button>
       </div>
       <p class="hint" id="dur-hint">Single clip · ~5 seconds</p>
-      <div class="locked-banner" id="lock-banner">Settings locked while FRANK generates</div>
+      <div class="locked-banner" id="lock-banner">Settings locked · generation in progress</div>
 
-      <button class="btn" id="go" type="button"><span class="spin"></span><span class="txt">Generate with FRANK</span></button>
+      <div class="actions">
+        <button class="btn" id="go" type="button"><span class="spin"></span><span class="txt">Generate with FRANK</span></button>
+        <button class="btn ghost danger" id="cancel" type="button">Cancel</button>
+      </div>
       <div id="stat" role="status" aria-live="polite"></div>
       <div id="out"></div>
     </div>
@@ -144,16 +151,16 @@ main{position:fixed;inset:env(safe-area-inset-top) 0 calc(56px + env(safe-area-i
   <section class="view" id="v-set">
     <div class="pad">
       <h2>About FRANK</h2>
-      <p class="lead">FRANK is text-to-video for Reel Riot. No Hugging Face. Powered by Puter.js (Wan, Veo, Seedance & more).</p>
+      <p class="lead">FRANK uses Puter.js for real text-to-video (Wan / Seedance / etc). No Hugging Face.</p>
       <div class="card">
         <p class="hint" style="margin:0">
           <span class="tag">NO HF TOKEN</span><br><br>
-          You do <b>not</b> need a Hugging Face key.<br><br>
-          Puter may ask you to sign in so <b>your</b> AI credits cover generation. The app costs nothing to run.<br><br>
-          When you tap Generate, duration and format lock until the job finishes.
+          <b>First time:</b> tapping Generate opens a <b>Puter.com sign-in</b> popup. Allow popups for this site, sign in (free account), then generation uses your Puter AI credits (User-Pays).<br><br>
+          Stuck? Tap Cancel, allow popups, try 5 sec first.
         </p>
       </div>
-      <button class="btn alt" id="test" type="button">Test FRANK (sample clip)</button>
+      <button class="btn alt" id="signin" type="button">Sign in to Puter</button>
+      <button class="btn alt" id="test" type="button">Test sample clip (no credits)</button>
       <div id="set-msg" class="hint"></div>
       <button class="btn ghost danger" id="wipe" type="button">Erase all videos</button>
     </div>
@@ -169,13 +176,11 @@ main{position:fixed;inset:env(safe-area-inset-top) 0 calc(56px + env(safe-area-i
 <script type="module">
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
+const VERSION="frank-7";
 
 const dbp=new Promise((res,rej)=>{
   const r=indexedDB.open("frank-vid",2);
-  r.onupgradeneeded=()=>{
-    const d=r.result;
-    if(!d.objectStoreNames.contains("v"))d.createObjectStore("v",{keyPath:"id"});
-  };
+  r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains("v"))d.createObjectStore("v",{keyPath:"id"})};
   r.onsuccess=()=>res(r.result);
   r.onerror=()=>rej(r.error);
 });
@@ -196,16 +201,7 @@ async function persistVideo(meta,blob){
   if(!blob||!blob.size)throw new Error("Empty video — nothing to save");
   const buf=await blob.arrayBuffer();
   const type=blob.type||"video/mp4";
-  const record={
-    id:meta.id,
-    prompt:meta.prompt,
-    ts:meta.ts,
-    segments:meta.segments||1,
-    totalSec:meta.totalSec,
-    ar:meta.ar||"",
-    mime:type,
-    data:buf
-  };
+  const record={id:meta.id,prompt:meta.prompt,ts:meta.ts,segments:meta.segments||1,totalSec:meta.totalSec,ar:meta.ar||"",mime:type,data:buf};
   await put(record);
   const check=await tx("readonly",s=>s.get(record.id));
   if(!check||!check.data)throw new Error("Save verification failed");
@@ -228,6 +224,8 @@ $$("#ideas [data-p]").forEach(b=>b.onclick=()=>{$("#prompt").value=b.dataset.p;$
 
 let selectedSec=5;
 let busy=false;
+let abortGen=false;
+let tickTimer=null;
 
 function setSec(sec){
   if(busy)return;
@@ -251,7 +249,13 @@ function setControlsLocked(locked){
   $$("#dur-default button, #dur-long button").forEach(b=>b.disabled=locked);
   $$("#ideas .chip").forEach(b=>b.disabled=locked);
   $("#lock-banner").classList.toggle("on",locked);
+  $("#cancel").classList.toggle("on",locked);
 }
+$("#cancel").onclick=()=>{
+  if(!busy)return;
+  abortGen=true;
+  stat("Cancel requested… finishing current step or timing out.",true);
+};
 
 $("#wipe").onclick=async()=>{
   if(busy)return;
@@ -276,45 +280,56 @@ function buildScenePrompts(userPrompt,totalSec){
   for(let i=0;i<n;i++){
     let scene;
     if(n===1){
-      scene=`Photorealistic cinematic video: ${base}. Single continuous shot, coherent motion, sharp detail, natural lighting, no text, no watermark, no subtitles.`;
+      scene=`Photorealistic cinematic video: ${base}. Single continuous shot, coherent motion, sharp detail, natural lighting, no text, no watermark.`;
     }else if(i===0){
-      scene=`Photorealistic cinematic video, opening of a continuous sequence: ${base}. Establishing shot, introduce the main subject and setting, smooth camera, coherent motion, sharp detail, no text, no watermark.`;
+      scene=`Photorealistic cinematic video, opening of a continuous sequence: ${base}. Establishing shot, introduce the main subject and setting, smooth camera, coherent motion, no text, no watermark.`;
     }else if(i===n-1){
-      scene=`Photorealistic cinematic video, final beat of the same continuous sequence (part ${i+1} of ${n}): ${base}. Same characters, same style and lighting as before, natural conclusion of the action, seamless continuation, no hard cut, no text, no watermark.`;
+      scene=`Photorealistic cinematic video, final beat of the same continuous sequence (part ${i+1} of ${n}): ${base}. Same characters and style, natural conclusion, seamless continuation, no hard cut, no text.`;
     }else{
-      scene=`Photorealistic cinematic video, middle of a continuous sequence (part ${i+1} of ${n}): ${base}. Same characters, same environment and style as the previous moment, continue the action smoothly without a jump cut, coherent motion, sharp detail, no text, no watermark.`;
+      scene=`Photorealistic cinematic video, middle of a continuous sequence (part ${i+1} of ${n}): ${base}. Same characters, environment and style, continue the action smoothly, no jump cut, no text.`;
     }
     beats.push(scene);
   }
   return {beats,chunk};
 }
 
-async function frankClip(prompt,ar,seconds){
-  if(typeof puter==="undefined"||!puter.ai||!puter.ai.txt2vid){
-    throw new Error("Puter.js failed to load. Reload the page.");
+function withTimeout(promise,ms,label){
+  let to;
+  const timeout=new Promise((_,rej)=>{
+    to=setTimeout(()=>rej(new Error((label||"Request")+" timed out after "+Math.round(ms/1000)+"s. Tap Generate again or try 5 sec.")),ms);
+  });
+  return Promise.race([promise,timeout]).finally(()=>clearTimeout(to));
+}
+
+async function ensurePuterAuth(){
+  if(typeof puter==="undefined")throw new Error("Puter.js failed to load. Hard-refresh the page.");
+  try{
+    if(puter.auth&&typeof puter.auth.isSignedIn==="function"){
+      const ok=await puter.auth.isSignedIn();
+      if(ok)return;
+    }
+  }catch(_){}
+  if(puter.auth&&typeof puter.auth.signIn==="function"){
+    stat("Opening Puter sign-in…\nAllow the popup, sign in, then return here.");
+    await puter.auth.signIn({attempt_temp_user_creation:true});
   }
-  const sec=Math.min(Math.max(Number(seconds)||5,4),10);
-  const opts={prompt,seconds:sec,duration:sec,size:sizeFor(ar)};
-  const result=await puter.ai.txt2vid(opts);
-  const blob=await resultToBlob(result);
-  if(!blob||blob.size<1000)throw new Error("FRANK returned an empty or invalid video");
-  return blob;
 }
 
 async function resultToBlob(result){
   if(result instanceof HTMLVideoElement){
     const src=result.src||result.currentSrc;
-    if(!src)throw new Error("Empty video element");
-    try{
-      const r=await fetch(src);
-      if(r.ok){
-        const b=await r.blob();
-        if(b.size>1000)return b.type?b:new Blob([b],{type:"video/mp4"});
-      }
-    }catch(_){}
-    throw new Error("Could not download video from player");
+    if(!src)throw new Error("Empty video element from Puter");
+    const r=await fetch(src);
+    if(!r.ok)throw new Error("Download failed ("+r.status+")");
+    const b=await r.blob();
+    if(b.size<500)throw new Error("Downloaded video too small");
+    return b.type?b:new Blob([b],{type:"video/mp4"});
   }
   if(result&&typeof result==="object"){
+    if(result instanceof Blob){
+      if(result.size<500)throw new Error("Empty blob");
+      return result;
+    }
     const url=result.src||result.url||result.video_url||result.output||(result.data&&result.data.url);
     if(typeof url==="string"){
       const r=await fetch(url);
@@ -322,7 +337,6 @@ async function resultToBlob(result){
       const b=await r.blob();
       return b.type?b:new Blob([b],{type:"video/mp4"});
     }
-    if(result instanceof Blob)return result;
   }
   if(typeof result==="string"&&/^https?:/i.test(result)){
     const r=await fetch(result);
@@ -330,7 +344,36 @@ async function resultToBlob(result){
     const b=await r.blob();
     return b.type?b:new Blob([b],{type:"video/mp4"});
   }
-  throw new Error("Unexpected response from FRANK / Puter");
+  throw new Error("Unexpected Puter response type");
+}
+
+async function frankClip(prompt,ar,seconds,onTick){
+  if(abortGen)throw new Error("Cancelled");
+  if(typeof puter==="undefined"||!puter.ai||!puter.ai.txt2vid){
+    throw new Error("Puter.js failed to load. Hard-refresh.");
+  }
+  const sec=Math.min(Math.max(Number(seconds)||5,4),10);
+  const opts={prompt,seconds:sec};
+  if(ar==="9:16")opts.size="720x1280";
+  else if(ar==="1:1")opts.size="720x720";
+  else opts.size="1280x720";
+
+  const started=Date.now();
+  if(onTick){
+    onTick(0);
+    clearInterval(tickTimer);
+    tickTimer=setInterval(()=>onTick(Math.round((Date.now()-started)/1000)),1000);
+  }
+  try{
+    const result=await withTimeout(puter.ai.txt2vid(opts),240000,"Video generation");
+    if(abortGen)throw new Error("Cancelled");
+    const blob=await resultToBlob(result);
+    if(!blob||blob.size<1000)throw new Error("FRANK returned an empty video");
+    return blob;
+  }finally{
+    clearInterval(tickTimer);
+    tickTimer=null;
+  }
 }
 
 async function stitchBlobs(blobs,onProg){
@@ -374,12 +417,15 @@ async function stitchBlobs(blobs,onProg){
 
 function friendly(e){
   const m=String(e&&e.message||e||"");
-  const code=e&&(e.code||e.errorCode);
-  if(code==="insufficient_funds")return "Not enough Puter AI credits. Sign in at puter.com or add credits.";
-  if(code==="moderation_flagged")return "Prompt blocked by safety filter. Rephrase and try again.";
-  if(code==="upstream_timeout")return "Model timed out. Try a shorter duration.";
+  const code=e&&(e.code||e.errorCode||e.error);
+  if(code==="insufficient_funds"||/insufficient/i.test(m))return "Not enough Puter AI credits. Sign in at puter.com and add free credits, then retry.";
+  if(code==="moderation_flagged")return "Prompt blocked. Rephrase and try again.";
+  if(code==="upstream_timeout"||/timed out/i.test(m))return m;
+  if(code==="popup_blocked")return "Sign-in popup blocked. Allow popups for this site, then tap Generate again.";
+  if(code==="auth_window_closed")return "Sign-in was closed. Tap Generate and complete Puter sign-in.";
   if(/Load failed|Failed to fetch|NetworkError/i.test(m))return "Network error. Check connection and retry.";
-  return m.slice(0,180);
+  if(/Cancelled/i.test(m))return "Cancelled.";
+  return m.slice(0,200);
 }
 
 function showPlayer(blob){
@@ -398,52 +444,43 @@ async function generate(){
   const lockedSec=selectedSec;
   const lockedAr=$("#ar").value;
   const lockedPrompt=prompt;
+  abortGen=false;
   setControlsLocked(true);
   $("#out").classList.remove("on");$("#out").innerHTML="";
   $("#dur-hint").textContent="Locked · "+lockedSec+"s · generating…";
 
-  const {beats,chunk}=buildScenePrompts(lockedPrompt,lockedSec);
-  const blobs=[];
   try{
+    stat("Checking Puter sign-in…");
+    await ensurePuterAuth();
+    if(abortGen)throw new Error("Cancelled");
+
+    const {beats,chunk}=buildScenePrompts(lockedPrompt,lockedSec);
+    const blobs=[];
+
     for(let i=0;i<beats.length;i++){
-      stat("FRANK scene "+(i+1)+"/"+beats.length+" · "+chunk+"s (locked "+lockedSec+"s job)\nGenerating — keep this tab open…");
-      const blob=await frankClip(beats[i],lockedAr,chunk);
-      blobs.push(blob);
-      stat("Scene "+(i+1)+"/"+beats.length+" ready."+(i<beats.length-1?"\nNext scene…":"\nSaving…"));
+      if(abortGen)throw new Error("Cancelled");
+      const sceneLabel="Scene "+(i+1)+"/"+beats.length;
+      await frankClip(beats[i],lockedAr,chunk,(sec)=>{
+        stat(sceneLabel+" · "+chunk+"s clip (job locked at "+lockedSec+"s)\nGenerating… "+sec+"s elapsed\nKeep this tab open. First run needs Puter sign-in.");
+      }).then(blob=>{
+        blobs.push(blob);
+      });
+      stat(sceneLabel+" ready."+(i<beats.length-1?"\nStarting next scene…":"\nSaving…"));
     }
 
     let finalBlob=blobs[0];
     if(blobs.length>1){
       stat("Stitching "+blobs.length+" scenes…");
       try{finalBlob=await stitchBlobs(blobs,(a,b)=>stat("Stitch "+a+"/"+b+"…"));}
-      catch(e){
-        finalBlob=blobs[0];
-        stat("Stitch skipped ("+friendly(e)+"). Saving first scene + playlist…");
-      }
+      catch(e){finalBlob=blobs[0];stat("Stitch skipped. Saving scenes separately…");}
     }
 
     const id=Date.now()+"-"+Math.random().toString(36).slice(2,8);
-    await persistVideo({
-      id,
-      prompt:lockedPrompt,
-      ts:Date.now(),
-      segments:blobs.length,
-      totalSec:lockedSec,
-      ar:lockedAr
-    },finalBlob);
+    await persistVideo({id,prompt:lockedPrompt,ts:Date.now(),segments:blobs.length,totalSec:lockedSec,ar:lockedAr},finalBlob);
 
     if(blobs.length>1&&finalBlob===blobs[0]){
       for(let i=1;i<blobs.length;i++){
-        try{
-          await persistVideo({
-            id:id+"-s"+i,
-            prompt:lockedPrompt+" (part "+(i+1)+")",
-            ts:Date.now()+i,
-            segments:1,
-            totalSec:chunk,
-            ar:lockedAr
-          },blobs[i]);
-        }catch(_){}
+        try{await persistVideo({id:id+"-s"+i,prompt:lockedPrompt+" (part "+(i+1)+")",ts:Date.now()+i,segments:1,totalSec:chunk,ar:lockedAr},blobs[i]);}catch(_){}
       }
       const wrap=document.createElement("div");wrap.className="seg-list";
       const main=document.createElement("video");
@@ -461,26 +498,41 @@ async function generate(){
       showPlayer(finalBlob);
     }
 
-    stat("Saved · "+lockedSec+"s job · "+blobs.length+" scene"+(blobs.length>1?"s":"")+"\nOpen Library to rewatch anytime.",false,true);
+    stat("Saved · "+lockedSec+"s · "+blobs.length+" scene"+(blobs.length>1?"s":"")+"\nOpen Library anytime. ("+VERSION+")",false,true);
     renderFeed().catch(()=>{});
   }catch(e){
-    stat("FRANK failed.\n\n"+friendly(e)+"\n\nDuration was locked at "+lockedSec+"s. Try again or pick 5 sec.",true);
+    stat("FRANK failed.\n\n"+friendly(e)+"\n\nTips:\n• Allow Puter popups\n• Use About → Sign in to Puter\n• Try 5 sec first\n• Keep tab open",true);
   }finally{
+    clearInterval(tickTimer);tickTimer=null;
     setControlsLocked(false);
     setSec(selectedSec);
+    abortGen=false;
   }
 }
-$("#go").onclick=generate;
+$("#go").onclick=()=>{generate().catch(e=>stat(friendly(e),true));};
+
+$("#signin").onclick=async()=>{
+  $("#set-msg").style.color="var(--muted)";
+  $("#set-msg").textContent="Opening Puter sign-in…";
+  try{
+    await ensurePuterAuth();
+    $("#set-msg").style.color="var(--ok)";
+    $("#set-msg").textContent="Signed in. Go Generate.";
+  }catch(e){
+    $("#set-msg").style.color="var(--hot)";
+    $("#set-msg").textContent=friendly(e);
+  }
+};
 
 $("#test").onclick=async()=>{
   if(busy)return;
   $("#set-msg").style.color="var(--muted)";
-  $("#set-msg").textContent="Running test mode sample (no credits)…";
+  $("#set-msg").textContent="Sample clip (no credits)…";
   try{
     if(typeof puter==="undefined")throw new Error("Puter not loaded");
-    const video=await puter.ai.txt2vid("A single orange on a black table, soft light, test",true);
+    const video=await withTimeout(puter.ai.txt2vid("A single orange on a black table, soft light",true),30000,"Test");
     $("#set-msg").style.color="var(--ok)";
-    $("#set-msg").textContent="FRANK is online. Test sample OK.";
+    $("#set-msg").textContent="Puter OK · sample received ("+VERSION+")";
     if(video instanceof HTMLVideoElement){
       video.controls=true;video.style.width="100%";video.style.borderRadius="12px";video.style.marginTop="10px";
       const prev=$("#set-msg").nextElementSibling;
@@ -497,7 +549,7 @@ async function renderFeed(){
   const feed=$("#feed");
   let items=[];
   try{items=await all()}catch(e){feed.innerHTML='<p class="hint">Library error: '+e.message+'</p>';return}
-  if(!items.length){feed.innerHTML='<p class="hint">No videos yet. Make one with FRANK.</p>';return}
+  if(!items.length){feed.innerHTML='<p class="hint">No videos yet.</p>';return}
   feed.innerHTML="";
   for(const it of items){
     const blob=recordToBlob(it);
