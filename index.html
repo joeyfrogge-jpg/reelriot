@@ -103,7 +103,7 @@ main{position:fixed;inset:env(safe-area-inset-top) 0 calc(56px + env(safe-area-i
       </div>
       <div class="row">
         <label>Format<select id="ar"><option value="9:16">Vertical (phone)</option><option value="16:9">Wide</option><option value="1:1">Square</option></select></label>
-        <label>Length<select id="dur"><option value="3" selected>~3 sec</option><option value="2">~2 sec (fastest)</option></select></label>
+        <label>Length<select id="dur"><option value="3" selected>3 sec</option><option value="5">5 sec</option><option value="8">8 sec</option><option value="10">10 sec</option><option value="2">2 sec (fastest)</option></select></label>
       </div>
       <button class="btn" id="go" type="button"><span class="spin"></span><span class="txt">Generate video</span></button>
       <div id="stat" role="status" aria-live="polite"></div>
@@ -124,7 +124,7 @@ main{position:fixed;inset:env(safe-area-inset-top) 0 calc(56px + env(safe-area-i
         <button class="btn alt" id="test" type="button">Test connection</button>
         <div id="set-msg" class="hint"></div>
       </div>
-      <p class="hint">Free ZeroGPU has daily limits. If every model fails, wait and try ~2 sec.</p>
+      <p class="hint">Longer clips need more free GPU time. If generation fails, try 3 sec or wait and retry.</p>
       <button class="btn ghost danger" id="wipe" type="button">Erase all videos</button>
     </div>
   </section>
@@ -209,7 +209,7 @@ async function fetchBlob(url){
 const BACKENDS=[
   {id:"zeroscope",label:"Zeroscope (fast)",space:"hysts/zeroscope-v2",
     async run(app,prompt,ar,dur){
-      const frames=dur<=2?16:24;
+      const frames=Math.min(48, Math.max(16, Math.round((+dur||3)*8)));
       const seed=Math.floor(Math.random()*1e9);
       const result=await app.predict("/run",[prompt,seed,frames,25]);
       return result&&result.data!==undefined?result.data:result;
@@ -219,11 +219,12 @@ const BACKENDS=[
       const sizes={"9:16":[512,768],"16:9":[768,512],"1:1":[512,512]};
       const pair=sizes[ar]||sizes["9:16"]; const w=pair[0],h=pair[1];
       const seed=Math.floor(Math.random()*1e9);
+      const d=Math.min(+dur||3,10);
       try{
-        const result=await app.predict("/generate_video",[null,prompt,Math.min(+dur||3,3),false,seed,true,h,w]);
+        const result=await app.predict("/generate_video",[null,prompt,d,false,seed,true,h,w]);
         return result&&result.data!==undefined?result.data:result;
       }catch(e){
-        const result=await app.predict("/generate_video",{prompt:prompt,duration:Math.min(+dur||3,3),enhance_prompt:false,seed:seed,randomize_seed:true,height:h,width:w});
+        const result=await app.predict("/generate_video",{prompt:prompt,duration:d,enhance_prompt:false,seed:seed,randomize_seed:true,height:h,width:w});
         return result&&result.data!==undefined?result.data:result;
       }
     }},
@@ -232,11 +233,12 @@ const BACKENDS=[
       const sizes={"9:16":[512,768],"16:9":[768,512],"1:1":[512,512]};
       const pair=sizes[ar]||sizes["9:16"]; const w=pair[0],h=pair[1];
       const seed=Math.floor(Math.random()*1e9);
+      const d=Math.min(+dur||3,10);
       try{
-        const result=await app.predict("/text_to_video",[prompt,"",null,null,h,w,"text_to_video",Math.min(+dur||3,3),9,seed,true,3,false]);
+        const result=await app.predict("/text_to_video",[prompt,"",null,null,h,w,"text_to_video",d,9,seed,true,3,false]);
         return result&&result.data!==undefined?result.data:result;
       }catch(e){
-        const result=await app.predict("/text_to_video",{prompt:prompt,negative_prompt:"",height_ui:h,width_ui:w,mode:"text_to_video",duration_ui:Math.min(+dur||3,3),seed_ui:seed,randomize_seed:true});
+        const result=await app.predict("/text_to_video",{prompt:prompt,negative_prompt:"",height_ui:h,width_ui:w,mode:"text_to_video",duration_ui:d,seed_ui:seed,randomize_seed:true});
         return result&&result.data!==undefined?result.data:result;
       }
     }},
@@ -245,11 +247,12 @@ const BACKENDS=[
       const sizes={"9:16":[480,832],"16:9":[832,480],"1:1":[512,512]};
       const pair=sizes[ar]||sizes["9:16"]; const w=pair[0],h=pair[1];
       const seed=Math.floor(Math.random()*1e9);
+      const d=Math.min(+dur||3,10);
       try{
-        const result=await app.predict("/generate_video",[null,prompt,h,w,"blurry, low quality",Math.min(+dur||3,3),5,20,seed,true]);
+        const result=await app.predict("/generate_video",[null,prompt,h,w,"blurry, low quality",d,5,20,seed,true]);
         return result&&result.data!==undefined?result.data:result;
       }catch(e){
-        const result=await app.predict("/generate_video",{prompt:prompt,height:h,width:w,negative_prompt:"blurry, low quality",duration_seconds:Math.min(+dur||3,3),guidance_scale:5,steps:20,seed:seed,randomize_seed:true});
+        const result=await app.predict("/generate_video",{prompt:prompt,height:h,width:w,negative_prompt:"blurry, low quality",duration_seconds:d,guidance_scale:5,steps:20,seed:seed,randomize_seed:true});
         return result&&result.data!==undefined?result.data:result;
       }
     }}
@@ -269,7 +272,7 @@ async function generate(){
       stat("Trying "+b.label+"… ("+(i+1)+"/"+BACKENDS.length+")\nConnecting…");
       const app=await connectSpace(b.space);
       const spaceUrl="https://"+b.space.toLowerCase().replace(/[/_.]+/g,"-")+".hf.space";
-      stat("Trying "+b.label+"…\nGenerating (can take 30–90s)…");
+      stat("Trying "+b.label+"…\nGenerating "+dur+"s clip (can take 1–3 min)…");
       const data=await b.run(app,prompt,ar,dur);
       const url=findVideo(data,spaceUrl);
       if(!url){errors.push(b.label+": no video returned");stat(b.label+" finished with no video.\nTrying next model…");continue}
@@ -286,7 +289,7 @@ async function generate(){
       stat(b.label+" failed.\n"+msg+"\nTrying next…");
     }
   }
-  stat("All models failed.\n\n"+errors.join("\n")+"\n\nTips: wait a few minutes (free GPU quota), keep Length at ~2 sec, try a simpler prompt.",true);
+  stat("All models failed.\n\n"+errors.join("\n")+"\n\nTips: try 3 sec if longer clips fail, or wait a few minutes for free GPU quota.",true);
   busy=false;btn.disabled=false;btn.classList.remove("busy");
 }
 $("#go").onclick=generate;
