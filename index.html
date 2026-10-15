@@ -260,10 +260,18 @@ $("#inspect").onclick=async()=>{
 /* ---------- generation ---------- */
 const SIZES={"9:16":[480,832],"16:9":[832,480],"1:1":[640,640]};
 function pickEndpoint(eps){
-  const want=LS("api"),keys=Object.keys(eps);
-  if(want&&eps[want])return want;
-  if(want&&eps["/"+want.replace(/^\//,"")])return "/"+want.replace(/^\//,"");
-  return keys.find(k=>/(t2v|text.?to.?video|generate|video)/i.test(k))||keys[0];
+  const want=LS("api").trim(),keys=Object.keys(eps);
+  if(want){
+    const n="/"+want.replace(/^\//,"");
+    if(eps[want])return want;
+    if(eps[n])return n;
+    const loose=keys.find(k=>k.toLowerCase()===n.toLowerCase());
+    if(loose)return loose;
+  }
+  /* prefer endpoints whose declared output is a Video, so helper endpoints never get picked */
+  const retVideo=k=>(eps[k].returns||[]).some(r=>/video/i.test([r.component,r.label,r.type&&r.type.type,r.python_type&&r.python_type.description].join(" ")));
+  const vids=keys.filter(retVideo),pool=vids.length?vids:keys;
+  return pool.find(k=>/(t2v|text.?to.?video|generate)/i.test(k))||pool[0];
 }
 function buildPayload(params,o){
   const p={};let usedPrompt=false;
