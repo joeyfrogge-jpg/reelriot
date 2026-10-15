@@ -86,24 +86,24 @@ main{position:fixed;inset:env(safe-area-inset-top) 0 calc(56px + env(safe-area-i
 </div>
 <main id="app" hidden>
   <header>
-    <div class="brand"><div class="logo">P</div><div><h1>Pulse</h1><div class="sub">AI Video</div></div></div>
+    <div class="brand"><div class="logo">P</div><div><h1>Pulse</h1><div class="sub">AI Video · HQ</div></div></div>
     <button class="icon-btn" id="btn-set" type="button" aria-label="Settings">⚙</button>
   </header>
   <section class="view on" id="v-make">
     <div class="pad">
       <h2>Make a video</h2>
-      <p class="lead">Describe a scene. We try several free AI video models until one works.</p>
+      <p class="lead">Higher quality settings. Pick 5, 10, or 20 seconds.</p>
       <div class="card">
-        <label>Scene<textarea id="prompt" placeholder="A golden retriever surfing a turquoise wave at sunset, cinematic, slow motion" rows="4"></textarea></label>
+        <label>Scene<textarea id="prompt" placeholder="A golden retriever surfing a turquoise wave at sunset, cinematic, slow motion, highly detailed" rows="4"></textarea></label>
         <div class="chips" id="ideas">
-          <button class="chip" type="button" data-p="Neon rain on empty Tokyo streets at night, reflections, cinematic">Neon rain</button>
-          <button class="chip" type="button" data-p="A red balloon floating over a quiet meadow, soft morning light">Balloon</button>
-          <button class="chip" type="button" data-p="Coffee steam rising in slow motion in a sunlit kitchen window">Coffee steam</button>
+          <button class="chip" type="button" data-p="Neon rain on empty Tokyo streets at night, reflections on wet asphalt, cinematic lighting, highly detailed">Neon rain</button>
+          <button class="chip" type="button" data-p="A red balloon floating over a quiet meadow, soft morning light, shallow depth of field, film grain">Balloon</button>
+          <button class="chip" type="button" data-p="Coffee steam rising in slow motion in a sunlit kitchen window, warm tones, macro detail">Coffee steam</button>
         </div>
       </div>
       <div class="row">
         <label>Format<select id="ar"><option value="9:16">Vertical (phone)</option><option value="16:9">Wide</option><option value="1:1">Square</option></select></label>
-        <label>Length<select id="dur"><option value="3" selected>3 sec</option><option value="5">5 sec</option><option value="8">8 sec</option><option value="10">10 sec</option><option value="2">2 sec (fastest)</option></select></label>
+        <label>Length<select id="dur"><option value="5" selected>5 sec</option><option value="10">10 sec</option><option value="20">20 sec</option></select></label>
       </div>
       <button class="btn" id="go" type="button"><span class="spin"></span><span class="txt">Generate video</span></button>
       <div id="stat" role="status" aria-live="polite"></div>
@@ -124,7 +124,7 @@ main{position:fixed;inset:env(safe-area-inset-top) 0 calc(56px + env(safe-area-i
         <button class="btn alt" id="test" type="button">Test connection</button>
         <div id="set-msg" class="hint"></div>
       </div>
-      <p class="hint">Longer clips need more free GPU time. If generation fails, try 3 sec or wait and retry.</p>
+      <p class="hint">HQ uses higher resolution and more steps. 20s clips may take several minutes and need free GPU quota.</p>
       <button class="btn ghost danger" id="wipe" type="button">Erase all videos</button>
     </div>
   </section>
@@ -159,7 +159,7 @@ $$("#ideas [data-p]").forEach(b=>b.onclick=()=>{$("#prompt").value=b.dataset.p;$
 function loadSet(){$("#tok").value=LS("pulse_tok")}
 function refreshPills(){const tok=LS("pulse_tok").trim().startsWith("hf_");const p=$("#pill-tok");p.className="pill "+(tok?"ok":"warn");p.innerHTML=`<span class="dot"></span> ${tok?"Token ready":"Add token"}`}
 $("#save").onclick=()=>{localStorage.pulse_tok=$("#tok").value.trim();$("#set-msg").textContent="Saved.";$("#set-msg").style.color="var(--ok)";refreshPills()};
-$("#test").onclick=async()=>{$("#set-msg").style.color="var(--muted)";$("#set-msg").textContent="Connecting…";try{const app=await connectSpace("hysts/zeroscope-v2");await app.view_api();$("#set-msg").style.color="var(--ok)";$("#set-msg").textContent="Connected. Ready."}catch(e){$("#set-msg").style.color="var(--hot)";$("#set-msg").textContent=String(e.message||e)}};
+$("#test").onclick=async()=>{$("#set-msg").style.color="var(--muted)";$("#set-msg").textContent="Connecting…";try{const app=await connectSpace("Lightricks/LTX-2-3");await app.view_api();$("#set-msg").style.color="var(--ok)";$("#set-msg").textContent="Connected. Ready."}catch(e){$("#set-msg").style.color="var(--hot)";$("#set-msg").textContent=String(e.message||e)}};
 $("#wipe").onclick=async()=>{if(!confirm("Erase every saved video?"))return;for(const i of await all())await del(i.id);renderFeed();show("feed")};
 async function connectSpace(name){
   const tok=LS("pulse_tok").trim();
@@ -206,55 +206,42 @@ async function fetchBlob(url){
   const b=await r.blob();
   return b.type&&b.type.startsWith("video")?b:new Blob([b],{type:"video/mp4"});
 }
+function hqSize(ar,dur){
+  const high=dur<=5;
+  const map=high?{"9:16":[576,1024],"16:9":[1024,576],"1:1":[768,768]}:{"9:16":[512,768],"16:9":[768,512],"1:1":[640,640]};
+  return map[ar]||map["9:16"];
+}
 const BACKENDS=[
-  {id:"zeroscope",label:"Zeroscope (fast)",space:"hysts/zeroscope-v2",
+  {id:"ltx23",label:"LTX-2 (HQ)",space:"Lightricks/LTX-2-3",maxDur:10,
     async run(app,prompt,ar,dur){
-      const frames=Math.min(48, Math.max(16, Math.round((+dur||3)*8)));
-      const seed=Math.floor(Math.random()*1e9);
-      const result=await app.predict("/run",[prompt,seed,frames,25]);
-      return result&&result.data!==undefined?result.data:result;
+      const d=Math.min(+dur||5,10);const pair=hqSize(ar,d);const w=pair[0],h=pair[1];const seed=Math.floor(Math.random()*1e9);
+      try{const result=await app.predict("/generate_video",[null,prompt,d,false,seed,true,h,w]);return result&&result.data!==undefined?result.data:result;}
+      catch(e){const result=await app.predict("/generate_video",{prompt:prompt,duration:d,enhance_prompt:false,seed:seed,randomize_seed:true,height:h,width:w});return result&&result.data!==undefined?result.data:result;}
     }},
-  {id:"ltx23",label:"LTX-2",space:"Lightricks/LTX-2-3",
+  {id:"ltx-dist",label:"LTX distilled (HQ)",space:"Lightricks/ltx-video-distilled",maxDur:10,
     async run(app,prompt,ar,dur){
-      const sizes={"9:16":[512,768],"16:9":[768,512],"1:1":[512,512]};
-      const pair=sizes[ar]||sizes["9:16"]; const w=pair[0],h=pair[1];
-      const seed=Math.floor(Math.random()*1e9);
-      const d=Math.min(+dur||3,10);
-      try{
-        const result=await app.predict("/generate_video",[null,prompt,d,false,seed,true,h,w]);
-        return result&&result.data!==undefined?result.data:result;
-      }catch(e){
-        const result=await app.predict("/generate_video",{prompt:prompt,duration:d,enhance_prompt:false,seed:seed,randomize_seed:true,height:h,width:w});
-        return result&&result.data!==undefined?result.data:result;
-      }
+      const d=Math.min(+dur||5,10);const pair=hqSize(ar,d);const w=pair[0],h=pair[1];const seed=Math.floor(Math.random()*1e9);
+      try{const result=await app.predict("/text_to_video",[prompt,"blurry, low quality, watermark, text, distorted",null,null,h,w,"text_to_video",d,9,seed,true,4,true]);return result&&result.data!==undefined?result.data:result;}
+      catch(e){const result=await app.predict("/text_to_video",{prompt:prompt,negative_prompt:"blurry, low quality, watermark, text",height_ui:h,width_ui:w,mode:"text_to_video",duration_ui:d,seed_ui:seed,randomize_seed:true,ui_guidance_scale:4,improve_texture_flag:true});return result&&result.data!==undefined?result.data:result;}
     }},
-  {id:"ltx-dist",label:"LTX distilled",space:"Lightricks/ltx-video-distilled",
+  {id:"wan",label:"Wan (HQ)",space:"multimodalart/wan2-1-fast",maxDur:20,
     async run(app,prompt,ar,dur){
-      const sizes={"9:16":[512,768],"16:9":[768,512],"1:1":[512,512]};
-      const pair=sizes[ar]||sizes["9:16"]; const w=pair[0],h=pair[1];
-      const seed=Math.floor(Math.random()*1e9);
-      const d=Math.min(+dur||3,10);
-      try{
-        const result=await app.predict("/text_to_video",[prompt,"",null,null,h,w,"text_to_video",d,9,seed,true,3,false]);
-        return result&&result.data!==undefined?result.data:result;
-      }catch(e){
-        const result=await app.predict("/text_to_video",{prompt:prompt,negative_prompt:"",height_ui:h,width_ui:w,mode:"text_to_video",duration_ui:d,seed_ui:seed,randomize_seed:true});
-        return result&&result.data!==undefined?result.data:result;
-      }
+      const d=Math.min(+dur||5,20);const pair=hqSize(ar,d);const w=pair[0],h=pair[1];const seed=Math.floor(Math.random()*1e9);const steps=d<=5?30:d<=10?24:18;
+      try{const result=await app.predict("/generate_video",[null,prompt,h,w,"blurry, low quality, watermark, text, distorted, ugly",d,5,steps,seed,true]);return result&&result.data!==undefined?result.data:result;}
+      catch(e){const result=await app.predict("/generate_video",{prompt:prompt,height:h,width:w,negative_prompt:"blurry, low quality, watermark, text",duration_seconds:d,guidance_scale:5,steps:steps,seed:seed,randomize_seed:true});return result&&result.data!==undefined?result.data:result;}
     }},
-  {id:"wan",label:"Wan fast",space:"multimodalart/wan2-1-fast",
+  {id:"zeroscope",label:"Zeroscope",space:"hysts/zeroscope-v2",maxDur:20,
     async run(app,prompt,ar,dur){
-      const sizes={"9:16":[480,832],"16:9":[832,480],"1:1":[512,512]};
-      const pair=sizes[ar]||sizes["9:16"]; const w=pair[0],h=pair[1];
-      const seed=Math.floor(Math.random()*1e9);
-      const d=Math.min(+dur||3,10);
-      try{
-        const result=await app.predict("/generate_video",[null,prompt,h,w,"blurry, low quality",d,5,20,seed,true]);
-        return result&&result.data!==undefined?result.data:result;
-      }catch(e){
-        const result=await app.predict("/generate_video",{prompt:prompt,height:h,width:w,negative_prompt:"blurry, low quality",duration_seconds:d,guidance_scale:5,steps:20,seed:seed,randomize_seed:true});
-        return result&&result.data!==undefined?result.data:result;
-      }
+      const d=+dur||5;const frames=Math.min(72,Math.max(24,Math.round(d*8)));const steps=40;const seed=Math.floor(Math.random()*1e9);
+      const result=await app.predict("/run",[prompt,seed,frames,steps]);return result&&result.data!==undefined?result.data:result;
+    }},
+  {id:"ltx-opt",label:"LTX optimized",space:"DeepRat/LTX-Video-ZeroGPU-Optimized",maxDur:20,
+    async run(app,prompt,ar,dur){
+      const d=Math.min(+dur||5,20);const pair=hqSize(ar,d);const w=pair[0],h=pair[1];const seed=Math.floor(Math.random()*1e9);
+      const api=await app.view_api();const eps=Object.keys(api.named_endpoints||{});const ep=eps.find(k=>/generat|run|predict|video/i.test(k))||eps[0];
+      if(!ep)throw new Error("No endpoint");
+      try{const result=await app.predict(ep,{prompt:prompt,height:h,width:w,duration:d,seed:seed});return result&&result.data!==undefined?result.data:result;}
+      catch(e){const result=await app.predict(ep,[prompt,d,h,w,seed]);return result&&result.data!==undefined?result.data:result;}
     }}
 ];
 const stat=(t,err,ok)=>{const s=$("#stat");s.className="on"+(err?" err":ok?" ok":"");s.textContent=t};
@@ -265,20 +252,22 @@ async function generate(){
   if(!prompt){stat("Write a scene description first.",true);return}
   if(!LS("pulse_tok").trim().startsWith("hf_")){show("set");$("#set-msg").style.color="var(--hot)";$("#set-msg").textContent="Paste your hf_ token and tap Save.";return}
   busy=true;const btn=$("#go");btn.disabled=true;btn.classList.add("busy");$("#out").classList.remove("on");$("#out").innerHTML="";
-  const ar=$("#ar").value;const dur=+$("#dur").value||3;const errors=[];
-  for(let i=0;i<BACKENDS.length;i++){
-    const b=BACKENDS[i];const t0=Date.now();
+  const ar=$("#ar").value;const dur=+$("#dur").value||5;const errors=[];
+  const order=BACKENDS.slice().sort((a,b)=>{const aOk=(a.maxDur||10)>=dur?0:1;const bOk=(b.maxDur||10)>=dur?0:1;return aOk-bOk});
+  for(let i=0;i<order.length;i++){
+    const b=order[i];const t0=Date.now();
     try{
-      stat("Trying "+b.label+"… ("+(i+1)+"/"+BACKENDS.length+")\nConnecting…");
+      const note=(b.maxDur||10)<dur?" (model max "+b.maxDur+"s)":"";
+      stat("Trying "+b.label+note+"… ("+(i+1)+"/"+order.length+")\nConnecting…");
       const app=await connectSpace(b.space);
       const spaceUrl="https://"+b.space.toLowerCase().replace(/[/_.]+/g,"-")+".hf.space";
-      stat("Trying "+b.label+"…\nGenerating "+dur+"s clip (can take 1–3 min)…");
+      stat("Trying "+b.label+"…\nHQ generate "+Math.min(dur,b.maxDur||dur)+"s (may take 1–4 min)…");
       const data=await b.run(app,prompt,ar,dur);
       const url=findVideo(data,spaceUrl);
       if(!url){errors.push(b.label+": no video returned");stat(b.label+" finished with no video.\nTrying next model…");continue}
       stat("Downloading video…");
       const blob=await fetchBlob(url);
-      await put({id:Date.now()+"-"+Math.random().toString(36).slice(2,6),prompt:prompt,blob:blob,ts:Date.now(),backend:b.id});
+      await put({id:Date.now()+"-"+Math.random().toString(36).slice(2,6),prompt:prompt,blob:blob,ts:Date.now(),backend:b.id,dur:dur});
       const v=document.createElement("video");v.src=URL.createObjectURL(blob);v.controls=true;v.playsInline=true;v.autoplay=true;v.muted=true;v.loop=true;
       $("#out").replaceChildren(v);$("#out").classList.add("on");
       stat("Done via "+b.label+" ("+Math.round((Date.now()-t0)/1000)+"s).\nOpen Library to rewatch.",false,true);
@@ -289,7 +278,7 @@ async function generate(){
       stat(b.label+" failed.\n"+msg+"\nTrying next…");
     }
   }
-  stat("All models failed.\n\n"+errors.join("\n")+"\n\nTips: try 3 sec if longer clips fail, or wait a few minutes for free GPU quota.",true);
+  stat("All models failed.\n\n"+errors.join("\n")+"\n\nTips: try 5 sec first, wait for free GPU quota, or simplify the prompt.",true);
   busy=false;btn.disabled=false;btn.classList.remove("busy");
 }
 $("#go").onclick=generate;
