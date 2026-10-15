@@ -2,440 +2,342 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Reel Riot">
-<meta name="theme-color" content="#14091f">
-<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-title" content="Pulse">
+<meta name="theme-color" content="#0a0a0f">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>Reel Riot</title>
+<meta name="robots" content="noindex,nofollow">
+<title>Pulse — creative GPT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#14091f;--bruise:#241238;--bruise2:#33194f;--bone:#f3ead8;--tape:#ffd23f;--hot:#ff3d7f;--dim:#a898bd;--ok:#5ddea8;
-  --disp:"Bricolage Grotesque",ui-rounded,system-ui,sans-serif;--body:ui-rounded,-apple-system,system-ui,sans-serif;
-  --radius:16px;--nav:calc(64px + env(safe-area-inset-bottom));
+  --bg:#0a0a0f;--panel:#12121a;--elev:#1a1a24;--line:#2a2a38;
+  --text:#f4f2ff;--muted:#8b87a0;--accent:#a78bfa;--accent2:#22d3ee;
+  --hot:#fb7185;--ok:#34d399;--user:#1e1b2e;
+  --font:"Instrument Sans",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;
+  --nav:calc(58px + env(safe-area-inset-bottom));
+  --radius:18px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;margin:0;background:var(--ink);color:var(--bone);font:16px/1.45 var(--body);overscroll-behavior:none}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:16px/1.45 var(--font);overscroll-behavior:none}
 body{padding-top:env(safe-area-inset-top)}
-h1,h2,h3{font-family:var(--disp);margin:0;letter-spacing:-.02em}
-button,input,select,textarea{font:inherit;color:inherit}
-button{cursor:pointer}
-main{position:fixed;inset:env(safe-area-inset-top) 0 var(--nav) 0}
-.view{display:none;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.view.on{display:block}
-#v-feed.on{display:block;overflow:hidden}
-#feed{height:100%;overflow-y:scroll;scroll-snap-type:y mandatory}
-.reel{height:100%;scroll-snap-align:start;scroll-snap-stop:always;position:relative;background:#000}
-.reel video{width:100%;height:100%;object-fit:cover}
-.cap{position:absolute;left:16px;right:88px;bottom:22px;font-size:15px;line-height:1.35;text-shadow:0 1px 10px #000;max-height:40%;overflow:hidden}
-.side{position:absolute;right:12px;bottom:22px;display:flex;flex-direction:column;gap:12px;align-items:center}
-.side button{width:52px;height:52px;border-radius:50%;border:0;background:rgba(20,9,31,.78);font-size:22px;backdrop-filter:blur(10px);color:var(--bone);display:grid;place-content:center;transition:transform .12s ease,background .15s}
-.side button:active{transform:scale(.92)}
-.side button.fav{background:var(--hot)}
-.mute-tip{position:absolute;top:18px;left:50%;transform:translateX(-50%);background:rgba(20,9,31,.75);backdrop-filter:blur(8px);padding:8px 14px;border-radius:999px;font-size:13px;color:var(--bone);pointer-events:none;opacity:0;transition:opacity .3s}
-.mute-tip.on{opacity:1}
-.empty{height:100%;display:grid;place-content:center;text-align:center;padding:32px 24px;gap:12px;color:var(--dim)}
-.empty .ico{font-size:48px;line-height:1}
-.empty h2{color:var(--bone);font-size:28px}
-.empty p{margin:0;max-width:280px;justify-self:center}
-.empty .btn{margin-top:8px;justify-self:center;min-width:180px}
-.pad{padding:20px 18px 36px;display:grid;gap:16px;max-width:520px;margin:0 auto}
-.pad > h2{font-size:30px}
-.sub{color:var(--dim);font-size:14px;margin:-6px 0 0}
-.card{background:var(--bruise);border:1px solid var(--bruise2);border-radius:var(--radius);padding:14px;display:grid;gap:12px}
-label{display:grid;gap:7px;color:var(--dim);font-size:13px;font-weight:600}
-label .help{font-weight:400;color:var(--dim);opacity:.85}
-textarea,input,select{background:var(--ink);border:1.5px solid var(--bruise2);border-radius:14px;padding:13px 14px;width:100%;color:var(--bone);font-size:16px}
-textarea{min-height:110px;resize:vertical;line-height:1.4}
-textarea:focus,input:focus,select:focus{outline:none;border-color:var(--tape);box-shadow:0 0 0 3px rgba(255,210,63,.2)}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.btn{border:0;border-radius:16px;padding:15px 16px;font-weight:700;background:var(--tape);color:var(--ink);min-height:52px;font-family:var(--disp);font-size:17px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s ease,opacity .15s}
-.btn:active{transform:scale(.98)}
-.btn.alt{background:var(--bruise2);color:var(--bone)}
-.btn.hot{background:var(--hot);color:#fff}
-.btn.ghost{background:transparent;border:1.5px solid var(--bruise2);color:var(--dim);font-size:14px;min-height:44px}
-.btn:disabled{opacity:.45;pointer-events:none}
-.btn .spin{width:18px;height:18px;border:2.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:none}
-.btn.busy .spin{display:block}
-@keyframes spin{to{transform:rotate(360deg)}}
-input[type=range]{padding:0;accent-color:var(--hot);border:0;background:none;height:28px}
-.chaos-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.chaos-val{background:var(--bruise2);color:var(--tape);font-weight:700;font-size:13px;padding:4px 10px;border-radius:999px;font-family:var(--disp)}
-#stat{display:none;border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.4;white-space:pre-wrap;word-break:break-word}
-#stat.on{display:block;background:var(--bruise);border:1px solid var(--bruise2);color:var(--dim)}
-#stat.err{color:#ffb0c8;border-color:var(--hot);background:rgba(255,61,127,.1)}
-#stat.ok{color:var(--ok);border-color:rgba(93,222,168,.35);background:rgba(93,222,168,.08)}
-#out{display:none}
-#out.on{display:block}
-#out video{width:100%;border-radius:16px;background:#000;max-height:50vh}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600;background:var(--bruise2);color:var(--dim)}
-.chip.ok{background:rgba(93,222,168,.15);color:var(--ok)}
-.chip.warn{background:rgba(255,210,63,.12);color:var(--tape)}
-.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
-.adv-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;color:var(--dim);font-size:14px;padding:8px 0;font-weight:600}
-.adv-toggle span{transition:transform .2s}
-.adv-toggle.open span{transform:rotate(180deg)}
-.adv{display:none;gap:12px}
-.adv.open{display:grid}
-.status-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.hint{font-size:12px;color:var(--dim);line-height:1.45;margin:0}
-.danger{color:#ffb0c8}
-nav{position:fixed;left:0;right:0;bottom:0;height:var(--nav);padding-bottom:env(safe-area-inset-bottom);background:rgba(36,18,56,.92);backdrop-filter:blur(16px);display:flex;border-top:1px solid var(--bruise2);z-index:5}
-nav button{flex:1;border:0;background:none;color:var(--dim);font-size:11px;font-weight:600;display:grid;place-content:center;gap:2px;padding-top:8px}
-nav button b{font-size:22px;font-weight:400;line-height:1}
-nav button.on{color:var(--tape)}
-#lock{position:fixed;inset:0;z-index:9;background:var(--ink);display:grid;place-content:center;padding:28px;gap:14px;text-align:center}
-#lock h1{font-size:52px;line-height:.95;letter-spacing:-2px;color:var(--tape)}
-#lock p{color:var(--dim);margin:0;max-width:280px;justify-self:center}
-#lock input{text-align:center;max-width:280px;justify-self:center}
-#lock .btn{max-width:280px;justify-self:center;width:100%}
-@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important}}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+a{color:var(--accent2)}
+#lock{position:fixed;inset:0;z-index:20;background:var(--bg);display:grid;place-content:center;padding:28px;gap:16px;text-align:center}
+#lock .mark{width:72px;height:72px;border-radius:22px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-content:center;font-size:32px;font-weight:700;margin:0 auto;color:#0a0a0f}
+#lock h1{margin:0;font-size:36px;letter-spacing:-.04em}
+#lock p{margin:0;color:var(--muted);max-width:260px;justify-self:center}
+#lock input{width:min(280px,100%);justify-self:center;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:17px}
+#lock input:focus{outline:2px solid var(--accent);outline-offset:1px}
+#lock .btn{width:min(280px,100%);justify-self:center}
+.shell{position:fixed;inset:env(safe-area-inset-top) 0 0 0;display:flex;flex-direction:column}
+header{flex:0 0 auto;padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);background:rgba(10,10,15,.85);backdrop-filter:blur(12px);z-index:5}
+header .brand{display:flex;align-items:center;gap:10px}
+header .logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-content:center;font-weight:700;color:#0a0a0f;font-size:15px}
+header h1{margin:0;font-size:17px;font-weight:600;letter-spacing:-.02em}
+header .sub{font-size:11px;color:var(--muted);font-weight:500}
+header .icon-btn{width:40px;height:40px;border-radius:12px;background:var(--panel);border:1px solid var(--line);display:grid;place-content:center;color:var(--muted);font-size:18px}
+header .icon-btn:active{background:var(--elev)}
+.view{display:none;flex:1;min-height:0;flex-direction:column}
+.view.on{display:flex}
+#chat-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px 12px;display:flex;flex-direction:column;gap:14px}
+.msg{max-width:92%;display:grid;gap:6px;animation:in .25s ease}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.msg.user{align-self:flex-end}
+.msg.bot{align-self:flex-start}
+.msg .bubble{padding:12px 14px;border-radius:18px;font-size:15.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.msg.user .bubble{background:linear-gradient(135deg,#4c1d95,#6d28d9);border-bottom-right-radius:6px}
+.msg.bot .bubble{background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:6px}
+.msg .meta{font-size:11px;color:var(--muted);padding:0 4px}
+.msg.user .meta{text-align:right}
+.msg.bot.streaming .bubble::after{content:"";display:inline-block;width:7px;height:1.1em;background:var(--accent2);margin-left:3px;vertical-align:text-bottom;animation:blink 1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.welcome{margin:auto 0;text-align:center;padding:24px 12px;display:grid;gap:14px;max-width:360px;align-self:center}
+.welcome h2{margin:0;font-size:26px;letter-spacing:-.03em}
+.welcome p{margin:0;color:var(--muted);font-size:14.5px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chip{padding:10px 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:13px;font-weight:500;color:var(--text)}
+.chip:active{border-color:var(--accent);color:var(--accent)}
+.composer{flex:0 0 auto;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:rgba(10,10,15,.92);backdrop-filter:blur(14px);display:grid;gap:8px}
+.quick{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.quick::-webkit-scrollbar{display:none}
+.quick button{flex:0 0 auto;padding:8px 12px;border-radius:999px;background:var(--elev);border:1px solid var(--line);font-size:12.5px;font-weight:500;color:var(--muted);white-space:nowrap}
+.quick button:active{color:var(--accent);border-color:var(--accent)}
+.row-in{display:flex;gap:8px;align-items:flex-end}
+.row-in textarea{flex:1;min-height:44px;max-height:120px;resize:none;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;line-height:1.4;font-size:16px}
+.row-in textarea:focus{outline:none;border-color:var(--accent)}
+.send{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--accent),#7c3aed);color:#fff;display:grid;place-content:center;font-size:18px;flex:0 0 auto}
+.send:disabled{opacity:.4}
+#v-set{overflow-y:auto;padding:18px 16px calc(24px + env(safe-area-inset-bottom))}
+#v-set h2{margin:0 0 4px;font-size:24px;letter-spacing:-.03em}
+#v-set .lead{color:var(--muted);font-size:14px;margin:0 0 18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:grid;gap:12px;margin-bottom:14px}
+.card label{display:grid;gap:6px;font-size:13px;font-weight:600;color:var(--muted)}
+.card label span.help{font-weight:400;opacity:.85}
+.card input, .card select{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px;width:100%}
+.card input:focus, .card select:focus{outline:none;border-color:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:12px 16px;border-radius:14px;font-weight:600;font-size:15px;background:linear-gradient(135deg,var(--accent),#7c3aed);color:#fff}
+.btn.alt{background:var(--elev);border:1px solid var(--line);color:var(--text)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-size:14px;min-height:44px}
+.btn.danger{color:var(--hot);border-color:rgba(251,113,133,.35)}
+.status{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;font-size:12px;font-weight:600;background:var(--elev);color:var(--muted);border:1px solid var(--line)}
+.pill.ok{color:var(--ok);border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.08)}
+.pill.warn{color:#fbbf24;border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.08)}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.hint{font-size:12px;color:var(--muted);line-height:1.45;margin:0}
+.err{color:var(--hot);font-size:13px;white-space:pre-wrap}
+.okmsg{color:var(--ok);font-size:13px}
 </style>
 </head>
 <body>
 <div id="lock">
-  <h1>Reel<br>Riot</h1>
-  <p id="lockmsg">Pick a short passcode for this phone. You will need it next time.</p>
+  <div class="mark">P</div>
+  <h1>Pulse</h1>
+  <p id="lockmsg">Pick a short passcode. This stays on your phone.</p>
   <input id="pass" type="password" inputmode="text" autocomplete="off" placeholder="Passcode" aria-label="Passcode">
-  <button class="btn" id="unlock">Unlock</button>
+  <button class="btn" id="unlock" type="button">Enter</button>
 </div>
-<main>
-  <section id="v-feed" class="view on" aria-label="Reels"><div id="feed"></div></section>
-  <section id="v-make" class="view" aria-label="Make a video"><div class="pad">
-    <h2>Make a reel</h2>
-    <p class="sub">Describe a scene, or tap Surprise me. Uses ~3s clips for reliability.</p>
-    <div class="card">
-      <label>Scene
-        <textarea id="prompt" placeholder="A chrome octopus bakes a sunrise inside a flooded shopping mall" rows="4"></textarea>
-      </label>
-      <label>
-        <span class="chaos-row">Wildness <span class="chaos-val" id="cv">60</span></span>
-        <input id="chaos" type="range" min="0" max="100" value="60">
-      </label>
-      <div class="row">
-        <button class="btn hot" id="surprise" type="button">Surprise me</button>
-        <button class="btn alt" id="roulette" type="button">Roulette: off</button>
+<div class="shell" id="app" hidden>
+  <header>
+    <div class="brand">
+      <div class="logo">P</div>
+      <div>
+        <h1 id="hdr-title">Pulse</h1>
+        <div class="sub" id="hdr-sub">Creative GPT</div>
       </div>
     </div>
-    <div class="row">
-      <label>Format
-        <select id="ar">
-          <option value="9:16">Vertical (phone)</option>
-          <option value="16:9">Wide (landscape)</option>
-          <option value="1:1">Square</option>
-        </select>
-      </label>
-      <label>Length
-        <select id="dur">
-          <option value="3" selected>3 sec (best)</option>
-          <option value="5">5 sec</option>
-        </select>
-      </label>
+    <div style="display:flex;gap:8px">
+      <button class="icon-btn" id="btn-new" type="button" title="New chat" aria-label="New chat">+</button>
+      <button class="icon-btn" id="btn-set" type="button" title="Settings" aria-label="Settings">⚙</button>
     </div>
-    <button class="btn" id="go" type="button"><span class="spin"></span><span class="txt">Generate</span></button>
-    <div id="stat" role="status" aria-live="polite"></div>
-    <div id="out"></div>
-    <button type="button" class="adv-toggle" id="advMakeBtn">More options <span>v</span></button>
-    <div class="adv" id="advMake">
-      <label>Avoid (optional)
-        <input id="neg" placeholder="blurry, text, watermark, distorted">
-      </label>
+  </header>
+  <section class="view on" id="v-chat">
+    <div id="chat-scroll"></div>
+    <div class="composer">
+      <div class="quick" id="quick">
+        <button type="button" data-q="Give me 5 wild short-form video ideas for tonight.">Video ideas</button>
+        <button type="button" data-q="Write a punchy Instagram caption for a neon city night drive.">Caption</button>
+        <button type="button" data-q="Turn this into a 15-second reel script with hook, beat, and CTA: ">Reel script</button>
+        <button type="button" data-q="Brainstorm a weird product name and one-line pitch.">Name it</button>
+        <button type="button" data-q="Roast my idea gently, then make it 10× more interesting: ">Upgrade</button>
+      </div>
+      <div class="row-in">
+        <textarea id="input" rows="1" placeholder="Message Pulse…" enterkeyhint="send"></textarea>
+        <button class="send" id="send" type="button" aria-label="Send">↑</button>
+      </div>
     </div>
-  </div></section>
-  <section id="v-set" class="view" aria-label="Setup"><div class="pad">
-    <h2>Setup</h2>
-    <p class="sub">Your token and videos stay on this phone only. <span class="chip ok">v5</span></p>
-    <div class="status-bar">
-      <span class="chip" id="chipTok"><span class="dot"></span> Token</span>
-      <span class="chip" id="chipSpace"><span class="dot"></span> Space</span>
+  </section>
+  <section class="view" id="v-set">
+    <h2>Settings</h2>
+    <p class="lead">Pulse runs on open models via your Hugging Face token. Nothing is stored on our servers.</p>
+    <div class="status">
+      <span class="pill" id="pill-tok"><span class="dot"></span> Token</span>
+      <span class="pill" id="pill-model"><span class="dot"></span> Model</span>
     </div>
     <div class="card">
       <label>Hugging Face token
-        <span class="help">Free account · starts with hf_</span>
-        <input id="tok" type="password" placeholder="hf_..." autocomplete="off">
+        <span class="help">Free · starts with hf_ · used for Inference API</span>
+        <input id="tok" type="password" placeholder="hf_…" autocomplete="off" autocapitalize="off">
       </label>
-      <label>Video Space
-        <span class="help">Usually leave as the default</span>
-        <input id="space" placeholder="Lightricks/LTX-2-3" autocapitalize="off" spellcheck="false">
+      <label>Model
+        <span class="help">Pick a fast instruct model</span>
+        <select id="model">
+          <option value="Qwen/Qwen2.5-7B-Instruct">Qwen2.5 7B (balanced)</option>
+          <option value="meta-llama/Meta-Llama-3.1-8B-Instruct">Llama 3.1 8B</option>
+          <option value="mistralai/Mistral-7B-Instruct-v0.3">Mistral 7B</option>
+          <option value="HuggingFaceH4/zephyr-7b-beta">Zephyr 7B</option>
+          <option value="google/gemma-2-9b-it">Gemma 2 9B</option>
+        </select>
       </label>
-      <div class="row">
-        <button class="btn" id="save" type="button">Save</button>
-        <button class="btn alt" id="inspect" type="button">Test Space</button>
-      </div>
-      <div id="info" class="hint" style="white-space:pre-wrap"></div>
+      <button class="btn" id="save" type="button">Save</button>
+      <button class="btn alt" id="test" type="button">Test connection</button>
+      <div id="set-msg" class="hint"></div>
     </div>
-    <button type="button" class="adv-toggle" id="advSetBtn">Advanced <span>v</span></button>
-    <div class="adv" id="advSet">
-      <label>Endpoint name (optional)
-        <input id="api" placeholder="/generate_video" autocapitalize="off" spellcheck="false">
-      </label>
-      <label>Parameter overrides (JSON)
-        <textarea id="ovr" placeholder='{"num_inference_steps": 25}' style="min-height:70px"></textarea>
-      </label>
+    <div class="card">
+      <p class="hint">Personality: sharp, playful, useful — built for short-form creative work (scripts, captions, ideas).</p>
+      <button class="btn ghost" id="back" type="button">← Back to chat</button>
+      <button class="btn ghost danger" id="wipe" type="button">Clear chat history</button>
     </div>
-    <p class="hint">The lock screen is not bank-grade security. Use models within their licenses.</p>
-    <button class="btn ghost danger" id="wipe" type="button">Erase all videos</button>
-  </div></section>
-</main>
-<nav>
-  <button data-v="feed" class="on" type="button"><b>></b>Reels</button>
-  <button data-v="make" type="button"><b>*</b>Make</button>
-  <button data-v="set" type="button"><b>=</b>Setup</button>
-</nav>
+  </section>
+</div>
 <script type="module">
-import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client@2.7.1/+esm";
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
 const LS=k=>localStorage.getItem(k)||"";
-const sha=async t=>[...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode("riot:"+t)))].map(b=>b.toString(16).padStart(2,"0")).join("");
-function lockInit(){
-  if(sessionStorage.ok==="1"){$("#lock").remove();return}
-  if(LS("ph"))$("#lockmsg").textContent="Welcome back — enter your passcode.";
+const SYSTEM = `You are Pulse, a creative GPT for phones. You help with short-form ideas, reel scripts, captions, names, hooks, and weird delightful riffs.
+Style: concise, vivid, human. Prefer short paragraphs and bullet lists when useful. Avoid filler and corporate tone.
+When asked for scripts, use clear structure (Hook / Beats / CTA). When asked for options, give 4–6 strong ones.
+Never claim you generated video or images unless the user is only brainstorming. You are a text creative partner.`;
+const sha=async t=>[...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode("pulse:"+t)))].map(b=>b.toString(16).padStart(2,"0")).join("");
+async function lockInit(){
+  if(sessionStorage.pulse_ok==="1"){showApp();return}
+  if(LS("pulse_ph"))$("#lockmsg").textContent="Welcome back — enter your passcode.";
   $("#unlock").onclick=async()=>{
     const v=$("#pass").value; if(!v)return;
     const h=await sha(v);
-    if(!LS("ph")){localStorage.ph=h}
-    else if(LS("ph")!==h){$("#lockmsg").textContent="Wrong passcode. Try again.";return}
-    sessionStorage.ok="1";$("#lock").remove();
+    if(!LS("pulse_ph"))localStorage.pulse_ph=h;
+    else if(LS("pulse_ph")!==h){$("#lockmsg").textContent="Wrong passcode.";return}
+    sessionStorage.pulse_ok="1";showApp();
   };
   $("#pass").addEventListener("keydown",e=>{if(e.key==="Enter")$("#unlock").click()});
 }
-lockInit();
-const db=new Promise((res,rej)=>{const r=indexedDB.open("riot",1);
-  r.onupgradeneeded=()=>r.result.createObjectStore("v",{keyPath:"id"});
+function showApp(){$("#lock").remove();$("#app").hidden=false;renderChat();refreshPills()}
+const dbp=new Promise((res,rej)=>{const r=indexedDB.open("pulse",1);
+  r.onupgradeneeded=()=>r.result.createObjectStore("msgs",{keyPath:"id",autoIncrement:true});
   r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
-const tx=async(m,f)=>{const d=await db;return new Promise((res,rej)=>{const t=d.transaction("v",m);const q=f(t.objectStore("v"));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)})};
-const put=o=>tx("readwrite",s=>s.put(o));
-const all=async()=>(await tx("readonly",s=>s.getAll())||[]).sort((a,b)=>b.ts-a.ts);
-const del=id=>tx("readwrite",s=>s.delete(id));
-function show(v){
-  $$(".view").forEach(e=>e.classList.toggle("on",e.id==="v-"+v));
-  $$("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
-  if(v==="feed")renderFeed(); else $$("#feed video").forEach(x=>x.pause());
-  if(v==="set")refreshChips();
+const tx=async(mode,fn)=>{const d=await dbp;return new Promise((res,rej)=>{const t=d.transaction("msgs",mode);const s=t.objectStore("msgs");const q=fn(s);t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)})};
+const saveMsg=m=>tx("readwrite",s=>s.add(m));
+const allMsgs=async()=>await tx("readonly",s=>s.getAll())||[];
+const clearMsgs=()=>tx("readwrite",s=>s.clear());
+let messages=[];
+let busy=false;
+function showView(id){
+  $$(".view").forEach(v=>v.classList.toggle("on",v.id===id));
+  $("#hdr-title").textContent=id==="v-set"?"Settings":"Pulse";
+  $("#hdr-sub").textContent=id==="v-set"?"Token & model":"Creative GPT";
+  if(id==="v-set")refreshPills();
 }
-$$("nav button").forEach(b=>b.onclick=()=>show(b.dataset.v));
-let urls=[], tipShown=false;
-async function renderFeed(){
-  urls.forEach(URL.revokeObjectURL);urls=[];
-  const feed=$("#feed"),items=await all();
-  if(!items.length){
-    feed.innerHTML=`<div class="empty"><div class="ico">*</div><h2>No reels yet</h2><p>Tap Make, try Surprise me, then Generate.</p><button class="btn" type="button" id="goMake">Make a reel</button></div>`;
-    $("#goMake").onclick=()=>show("make");return;
+$("#btn-set").onclick=()=>showView("v-set");
+$("#back").onclick=()=>showView("v-chat");
+$("#btn-new").onclick=async()=>{
+  if(busy)return;
+  if(messages.length && !confirm("Start a new chat?"))return;
+  messages=[]; await clearMsgs(); renderChat();
+};
+function renderChat(){
+  const el=$("#chat-scroll");
+  if(!messages.length){
+    el.innerHTML=`<div class="welcome"><h2>What are we making?</h2><p>Scripts, captions, names, wild ideas — type below or tap a starter.</p><div class="chips"><button class="chip" type="button" data-q="5 surreal reel concepts set in a flooded mall at night">Flooded mall reels</button><button class="chip" type="button" data-q="Write a 12-second hook + payoff for a cooking fail comedy reel">Cooking fail</button><button class="chip" type="button" data-q="Give me a brand voice for a chaotic neon soda startup">Brand voice</button></div></div>`;
+    el.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>send(b.dataset.q));
+    return;
   }
-  feed.innerHTML="";
-  const io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target.querySelector("video");if(e.isIntersecting){v.play().catch(()=>{})}else v.pause()}),{threshold:.7});
-  for(const it of items){
-    const u=URL.createObjectURL(it.blob);urls.push(u);
-    const d=document.createElement("div");d.className="reel";
-    d.innerHTML=`<video src="${u}" playsinline muted loop preload="metadata"></video><div class="mute-tip">Tap video for sound</div><div class="cap"></div><div class="side"><button class="fav${it.fav?" on":""}" type="button">♥</button><button class="rmx" type="button">↻</button><button class="shr" type="button">⇪</button><button class="dl" type="button">✕</button></div>`;
-    d.querySelector(".cap").textContent=it.prompt;
-    const v=d.querySelector("video"),tip=d.querySelector(".mute-tip");
-    if(!tipShown){tip.classList.add("on");tipShown=true;setTimeout(()=>tip.classList.remove("on"),3500)}
-    v.onclick=()=>{v.muted=!v.muted;tip.classList.toggle("on",v.muted);if(!v.muted)setTimeout(()=>tip.classList.remove("on"),1200)};
-    d.querySelector(".fav").onclick=async e=>{it.fav=!it.fav;await put(it);e.currentTarget.classList.toggle("fav",it.fav)};
-    if(it.fav)d.querySelector(".fav").classList.add("fav");
-    d.querySelector(".rmx").onclick=()=>{$("#prompt").value=it.prompt;show("make")};
-    d.querySelector(".shr").onclick=()=>shareBlob(it.blob);
-    d.querySelector(".dl").onclick=async()=>{if(confirm("Delete this reel?")){await del(it.id);renderFeed()}};
-    feed.append(d);io.observe(d);
+  el.innerHTML="";
+  for(const m of messages){
+    const d=document.createElement("div");
+    d.className="msg "+(m.role==="user"?"user":"bot");
+    d.innerHTML=`<div class="bubble"></div><div class="meta">${m.role==="user"?"You":"Pulse"}</div>`;
+    d.querySelector(".bubble").textContent=m.content;
+    el.append(d);
   }
+  el.scrollTop=el.scrollHeight;
 }
-async function shareBlob(b){
-  const f=new File([b],"reel-riot.mp4",{type:b.type||"video/mp4"});
-  try{if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]});
-  else{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="reel-riot.mp4";a.click()}}catch(e){}
+function appendStreaming(){
+  const el=$("#chat-scroll");
+  const welcome=el.querySelector(".welcome"); if(welcome)welcome.remove();
+  const d=document.createElement("div");
+  d.className="msg bot streaming"; d.id="stream-msg";
+  d.innerHTML=`<div class="bubble"></div><div class="meta">Pulse</div>`;
+  el.append(d); el.scrollTop=el.scrollHeight;
+  return d.querySelector(".bubble");
 }
-const R=a=>a[Math.floor(Math.random()*a.length)];
-const G={subj:["a pigeon in a tuxedo","a retired astronaut with a lawn mower","a lighthouse keeper made of jelly","three raccoons in a trench coat","a giant glass whale","a grandmother DJ","a samurai on a unicycle","a cathedral-sized houseplant","a tiny dragon doing taxes","a bus full of origami cranes","a chrome octopus","a marching band of snowmen"],act:["conducts a thunderstorm","races a freight train","argues with the moon","bakes a sunrise","escapes from a falling elevator","sings to a herd of neon deer","surfs a wave of spaghetti","opens a door in the sky","chases a runaway shadow","plays chess against the ocean"],place:["over a neon car wash","inside a flooded shopping mall","on a floating island of vinyl records","in a desert made of salt and mirrors","across a rooftop in a monsoon","in an abandoned roller rink","on a frozen highway at midnight","inside a giant snow globe","beneath a sky of paper lanterns"],cam:["slow dolly-in","handheld chase cam","drone orbit","fisheye lens","extreme close-up, macro lens","whip pan","low-angle hero shot","locked-off wide shot"],look:["35mm film grain","VHS glitch","claymation","grainy 70s sci-fi","hyper-real 8k","Studio Ghibli watercolor","neon noir","Super 8 home movie","cel-shaded anime","Kodachrome"],light:["golden hour","strobing neon","moonlit fog","harsh flash photography","sunset through dust","candlelit gloom"],twist:["everything slowly turns upside down","gravity switches off","the colors melt","time loops","confetti erupts in slow motion","a second sun rises","the camera is swallowed by smoke"]};
-function surprise(c){const n=+c;let p=`${R(G.subj)} ${R(G.act)} ${R(G.place)}`;p+=`, ${R(G.cam)}, ${R(G.look)}`;if(n>25)p+=`, ${R(G.light)}`;if(n>55)p+=`, then ${R(G.twist)}`;if(n>80)p=`${R(G.subj)} and ${R(G.subj)} ${R(G.act)} ${R(G.place)}; ${p}`;return p}
-$("#chaos").oninput=e=>$("#cv").textContent=e.target.value;
-$("#surprise").onclick=()=>{$("#prompt").value=surprise($("#chaos").value);$("#prompt").focus()};
-const DEFAULT_SPACE="Lightricks/LTX-2-3";
-function loadSet(){$("#tok").value=LS("tok");$("#space").value=LS("space")||DEFAULT_SPACE;$("#api").value=LS("api");$("#ovr").value=LS("ovr")}
-loadSet();
-function refreshChips(){
-  const tok=LS("tok").trim().startsWith("hf_");
-  const sp=(LS("space")||DEFAULT_SPACE).trim();
-  const ct=$("#chipTok"),cs=$("#chipSpace");
-  ct.className="chip "+(tok?"ok":"warn");
-  ct.innerHTML=`<span class="dot"></span> ${tok?"Token saved":"Add token"}`;
-  cs.className="chip ok";
-  cs.innerHTML=`<span class="dot"></span> ${sp.split("/").pop()||"Space"}`;
+const DEFAULT_MODEL="Qwen/Qwen2.5-7B-Instruct";
+function loadSet(){$("#tok").value=LS("pulse_tok");$("#model").value=LS("pulse_model")||DEFAULT_MODEL}
+function refreshPills(){
+  const tok=LS("pulse_tok").trim().startsWith("hf_");
+  const model=(LS("pulse_model")||DEFAULT_MODEL).split("/").pop();
+  const pt=$("#pill-tok"), pm=$("#pill-model");
+  pt.className="pill "+(tok?"ok":"warn");
+  pt.innerHTML=`<span class="dot"></span> ${tok?"Token ready":"Add token"}`;
+  pm.className="pill ok";
+  pm.innerHTML=`<span class="dot"></span> ${model}`;
 }
-refreshChips();
 $("#save").onclick=()=>{
-  const o=$("#ovr").value.trim();
-  if(o){try{JSON.parse(o)}catch{alert("Overrides must be valid JSON.");return}}
-  localStorage.tok=$("#tok").value.trim();localStorage.space=$("#space").value.trim()||DEFAULT_SPACE;
-  localStorage.api=$("#api").value.trim();localStorage.ovr=o;
-  $("#info").textContent="Saved on this phone.";refreshChips();
+  localStorage.pulse_tok=$("#tok").value.trim();
+  localStorage.pulse_model=$("#model").value;
+  $("#set-msg").className="okmsg";
+  $("#set-msg").textContent="Saved on this phone.";
+  refreshPills();
 };
-$("#wipe").onclick=async()=>{if(confirm("Erase every saved video on this phone?")){for(const i of await all())await del(i.id);renderFeed();show("feed")}};
-function wireAdv(btn,panel){btn.onclick=()=>{const open=panel.classList.toggle("open");btn.classList.toggle("open",open)}};
-wireAdv($("#advMakeBtn"),$("#advMake"));wireAdv($("#advSetBtn"),$("#advSet"));
-async function connect(){
-  const space=(LS("space")||DEFAULT_SPACE).trim().replace(/^https?:\/\/huggingface\.co\/spaces\//,"").replace(/\/+$/,"");
-  const tok=LS("tok").trim().replace(/\s+/g,"");
-  const direct=space.startsWith("http")?space:"https://"+space.toLowerCase().replace(/[\/_.]+/g,"-")+".hf.space";
-  const tries=[];
-  if(tok.startsWith("hf_"))tries.push([space,{token:tok}],[direct,{token:tok}]);
-  tries.push([space,{}],[direct,{}]);
-  let first=null;
-  for(const [ref,opt] of tries){try{return await Client.connect(ref,opt)}catch(e){first=first||e}}
-  throw new Error(String(first&&first.message||first)+"\n\nCheck that your token starts with hf_ and Space is owner/name.");
-}
-$("#inspect").onclick=async()=>{
-  $("#info").textContent="Testing connection…";
+$("#test").onclick=async()=>{
+  $("#set-msg").className="hint";$("#set-msg").textContent="Testing…";
   try{
-    const app=await connect(),api=await app.view_api();
-    const eps=api.named_endpoints||{};
-    $("#info").textContent="Connected. Endpoints:\n"+Object.keys(eps).map(k=>"• "+k).join("\n");
-  }catch(e){$("#info").textContent="Could not connect: "+(e.message||e)}
+    const out=await complete([{role:"user",content:"Say hi in five words."}],{max_tokens:32});
+    $("#set-msg").className="okmsg";$("#set-msg").textContent="Connected: "+(out||"").slice(0,80);
+  }catch(e){$("#set-msg").className="err";$("#set-msg").textContent=String(e.message||e)}
 };
-const SIZES={"9:16":[512,768],"16:9":[768,512],"1:1":[768,768]};
-function pickEndpoint(eps){
-  const want=LS("api").trim(),keys=Object.keys(eps);
-  if(want){const n="/"+want.replace(/^\//,"");if(eps[want])return want;if(eps[n])return n;const loose=keys.find(k=>k.toLowerCase()===n.toLowerCase());if(loose)return loose}
-  const retVideo=k=>(eps[k].returns||[]).some(r=>/video/i.test([r.component,r.label,r.type&&r.type.type,r.python_type&&r.python_type.description].join(" ")));
-  const vids=keys.filter(retVideo),pool=vids.length?vids:keys;
-  return pool.find(k=>/(t2v|text.?to.?video|generate)/i.test(k))||pool[0];
-}
-function buildPayload(params,o){
-  const p={};let usedPrompt=false;
-  for(const q of params){
-    const n=q.parameter_name,l=(q.label||n).toLowerCase()+" "+n.toLowerCase();
-    const comp=(q.component||"").toLowerCase();
-    const py=(q.python_type?.type||q.type?.type||"").toLowerCase();
-    const isStr=py==="str"||/textbox/.test(comp);
-    const isImg=/image|file/.test(comp)||/image|pil|ndarray/.test(py)||/image|img/.test(l);
-    if(isImg&&!o.image)continue;
-    let v=q.parameter_has_default?q.parameter_default:undefined;
-    if(isStr&&/neg/.test(l))v=o.neg;
-    else if(isStr&&!usedPrompt&&/(prompt|text|descr|caption)/.test(l)){v=o.prompt;usedPrompt=true}
-    else if(/seed/.test(l)&&!/rand/.test(l))v=Math.floor(Math.random()*2147483647);
-    else if(/width/.test(l))v=o.w;
-    else if(/height/.test(l))v=o.h;
-    else if(/(duration|seconds|length)/.test(l)&&!/frame/.test(l))v=Math.min(+o.dur||3,5);
-    else if(/enhance.?prompt/.test(l))v=false;
-    if(v===undefined||v===null)continue;
-    p[n]=v;
-  }
-  if(!usedPrompt){const f=params.find(q=>(q.python_type?.type||"")==="str"&&!/neg/.test((q.label||q.parameter_name)+""));if(f)p[f.parameter_name]=o.prompt}
-  let ov={};try{ov=JSON.parse(LS("ovr")||"{}")}catch{}
-  return {...p,...ov};
-}
-const VEXT=/\.(mp4|mov|webm|m4v|mkv)(\?|#|$)/i;
-function collectFiles(d,out,depth=0){
-  if(d==null||depth>8)return out;
-  if(typeof d==="string"){if(/^https?:\/\//i.test(d)||/^\/?file=/.test(d)||VEXT.test(d))out.push({url:d,str:true});return out}
-  if(Array.isArray(d)){d.forEach(x=>collectFiles(x,out,depth+1));return out}
-  if(typeof d==="object"){
-    if(d.url||d.path)out.push({url:d.url||null,path:d.path||null,name:d.orig_name||"",mime:d.mime_type||""});
-    for(const k in d)if(typeof d[k]==="object"||typeof d[k]==="string")collectFiles(d[k],out,depth+1);
-  }
-  return out;
-}
-function findVideo(d,spaceRef){
-  const f=collectFiles(d,[]);
-  const isVid=x=>VEXT.test(x.url||"")||VEXT.test(x.path||"")||VEXT.test(x.name||"")||/video/i.test(x.mime||"");
-  let hit=f.find(x=>isVid(x)&&(x.url||x.path))||f.find(x=>x.url&&x.url.startsWith("http")&&!/\.(png|jpe?g|gif|webp|json|txt)(\?|$)/i.test(x.url));
-  if(!hit)return null;
-  let u=hit.url||hit.path;if(!u)return null;
-  if(/^https?:\/\//i.test(u)||u.startsWith("blob:"))return u;
-  const base=(spaceRef||"").replace(/\/?$/,"");
-  if(u.startsWith("file=")||u.startsWith("/file=")||u.startsWith("/tmp")||u.startsWith("tmp/")){
-    const path=u.replace(/^\/?file=/,"");
-    if(base.startsWith("http"))return base+"/gradio_api/file="+encodeURIComponent(path).replace(/%2F/g,"/");
-    return "https://"+String(spaceRef||"").toLowerCase().replace(/[\/_.]+/g,"-")+".hf.space/gradio_api/file="+path;
-  }
-  if(u.startsWith("/")&&base.startsWith("http"))return base+u;
-  return u;
-}
-async function fetchBlob(u){
-  const tok=LS("tok").trim();
-  const opts=tok.startsWith("hf_")?{headers:{Authorization:"Bearer "+tok}}:{};
-  let r;try{r=await fetch(u,opts)}catch{r=await fetch(u,opts)}
-  if(!r||!r.ok)throw new Error("Download failed ("+(r&&r.status||"network")+")");
-  const b=await r.blob();
-  return (b.type&&b.type.startsWith("video"))?b:new Blob([b],{type:"video/mp4"});
-}
-const stat=(t,err,ok)=>{const s=$("#stat");s.className="on"+(err?" err":ok?" ok":"");s.textContent=t};
-let busy=false,roulette=false,wake=null;
-function setBusy(on){busy=on;const g=$("#go");g.disabled=on;g.classList.toggle("busy",on);g.querySelector(".txt").textContent=on?"Working…":"Generate"}
-async function generate(prompt){
-  const ar=$("#ar").value,[w,h]=SIZES[ar]||SIZES["9:16"];
-  let dur=Math.min(+$("#dur").value||3,5);
-  const spaceName=(LS("space")||DEFAULT_SPACE).trim().replace(/^https?:\/\/huggingface\.co\/spaces\//,"").replace(/\/+$/,"");
-  const direct="https://"+spaceName.toLowerCase().replace(/[\/_.]+/g,"-")+".hf.space";
-  if(!LS("tok").trim().startsWith("hf_"))throw new Error("Add your Hugging Face token in Setup first (starts with hf_). Then tap Save.");
-  stat("Connecting to Hugging Face…");
-  const app=await connect(),api=await app.view_api(),eps=api.named_endpoints||{};
-  const ep=pickEndpoint(eps);
-  if(!ep)throw new Error("That Space has no usable endpoint. Open Setup → Test Space.");
-  const params=(eps[ep].parameters)||[];
-  function buildArgs(o){
-    const named=buildPayload(params,o);
-    const args=params.map(p=>{const n=p.parameter_name;if(n in named)return named[n];if(/image|img/i.test(n))return null;return p.parameter_has_default?p.parameter_default:null});
-    return {named,args};
-  }
-  const attempts=[{w,h,dur:Math.min(dur,3)},{w:512,h:768,dur:3},{w:768,h:512,dur:3}];
-  let lastErr=null,u=null,result=null,payload=null;
-  for(let i=0;i<attempts.length;i++){
-    const a=attempts[i];
-    const o={prompt,neg:$("#neg").value||"blurry, distorted, watermark, text",w:a.w,h:a.h,dur:a.dur};
-    const built=buildArgs(o);payload=built.named;result=null;const t0=Date.now();
+$("#wipe").onclick=async()=>{
+  if(!confirm("Clear all chat messages on this phone?"))return;
+  messages=[]; await clearMsgs(); renderChat(); showView("v-chat");
+};
+loadSet();
+async function complete(chatMessages, opts={}){
+  const tok=LS("pulse_tok").trim();
+  if(!tok.startsWith("hf_"))throw new Error("Add your Hugging Face token in Settings (starts with hf_).");
+  const model=LS("pulse_model")||DEFAULT_MODEL;
+  const body={model,messages:[{role:"system",content:SYSTEM},...chatMessages],max_tokens:opts.max_tokens||700,temperature:opts.temperature??0.85,stream:false};
+  const endpoints=["https://router.huggingface.co/v1/chat/completions","https://api-inference.huggingface.co/v1/chat/completions"];
+  let lastErr;
+  for(const url of endpoints){
     try{
-      let stream;try{stream=app.submit(ep, built.args)}catch{stream=app.submit(ep, built.named)}
-      for await(const m of stream){
-        if(m.type==="status"){
-          const q=m.position!=null?"In queue (#"+(m.position+1)+")\n":"";
-          const tag=i?"Retry "+i+" · ":"";
-          const stage=m.stage==="error"?"Something went wrong":"Rendering your reel";
-          stat(tag+q+stage+"… "+Math.round((Date.now()-t0)/1000)+"s"+(m.eta?" · ~"+Math.round(m.eta)+"s left":""),m.stage==="error");
-          if(m.stage==="error")throw new Error(m.message||"Space error. Free GPU quota may be empty — wait and retry.");
-        }
-        if(m.type==="data")result=m.data;
-      }
-      u=findVideo(result,direct);
-      if(u)break;
-      lastErr="null video";
-      if(i<attempts.length-1){stat("No video yet — retrying with safer size…");continue}
-    }catch(e){
-      lastErr=e.message||String(e);
-      if(i<attempts.length-1){stat("Hit a snag — retrying…");continue}
-      throw e;
+      const r=await fetch(url,{method:"POST",headers:{"Authorization":"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify(body)});
+      const t=await r.text(); let data; try{data=JSON.parse(t)}catch{data={raw:t}}
+      if(!r.ok){const msg=data.error&&(data.error.message||data.error)||data.raw||r.statusText;lastErr=new Error(typeof msg==="string"?msg:JSON.stringify(msg));continue}
+      const text=data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content;
+      if(text)return text.trim();
+      if(Array.isArray(data)&&data[0]&&data[0].generated_text)return String(data[0].generated_text).trim();
+      if(data.generated_text)return String(data.generated_text).trim();
+      lastErr=new Error("Empty model response");
+    }catch(e){lastErr=e}
+  }
+  try{
+    const r=await fetch("https://api-inference.huggingface.co/models/"+encodeURIComponent(model),{method:"POST",headers:{Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify({inputs:SYSTEM+"\n\nUser: "+chatMessages[chatMessages.length-1].content+"\nAssistant:",parameters:{max_new_tokens:opts.max_tokens||700,temperature:0.85,return_full_text:false}})});
+    const data=await r.json();
+    if(!r.ok)throw new Error(data.error||r.statusText);
+    if(Array.isArray(data)&&data[0]&&data[0].generated_text)return String(data[0].generated_text).trim();
+    if(data.generated_text)return String(data.generated_text).trim();
+    throw new Error("Unexpected response");
+  }catch(e){throw lastErr||e}
+}
+async function completeStream(chatMessages, onDelta){
+  const tok=LS("pulse_tok").trim();
+  if(!tok.startsWith("hf_"))throw new Error("Add your Hugging Face token in Settings (starts with hf_).");
+  const model=LS("pulse_model")||DEFAULT_MODEL;
+  const body={model,messages:[{role:"system",content:SYSTEM},...chatMessages],max_tokens:700,temperature:0.85,stream:true};
+  const r=await fetch("https://router.huggingface.co/v1/chat/completions",{method:"POST",headers:{Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok||!r.body){const text=await complete(chatMessages);onDelta(text);return text}
+  const reader=r.body.getReader(); const dec=new TextDecoder(); let full="",buf="";
+  while(true){
+    const {done,value}=await reader.read(); if(done)break;
+    buf+=dec.decode(value,{stream:true}); const lines=buf.split("\n"); buf=lines.pop()||"";
+    for(const line of lines){
+      const s=line.trim(); if(!s.startsWith("data:"))continue;
+      const payload=s.slice(5).trim(); if(payload==="[DONE]")continue;
+      try{const j=JSON.parse(payload); const d=j.choices&&j.choices[0]&&j.choices[0].delta&&j.choices[0].delta.content; if(d){full+=d;onDelta(full)}}catch{}
     }
   }
-  if(!u)throw new Error("No video came back from the Space.\n"+(lastErr&&lastErr!=="null video"?lastErr+"\n":"")+"Usually: free ZeroGPU quota used up, or the Space is overloaded.\nWait a few minutes, keep Length on 3 sec, and try again.");
-  stat("Saving to your library…");
-  const blob=await fetchBlob(u);
-  await put({id:Date.now()+"-"+Math.random().toString(36).slice(2,6),prompt,blob,ts:Date.now(),fav:false});
-  const v=document.createElement("video");v.src=URL.createObjectURL(blob);v.controls=true;v.playsInline=true;v.autoplay=true;v.muted=true;v.loop=true;
-  $("#out").replaceChildren(v);$("#out").classList.add("on");
-  stat("Done — open Reels to watch.",false,true);
+  if(!full){full=await complete(chatMessages);onDelta(full)}
+  return full.trim();
 }
-async function run(){
-  if(busy)return;
-  let p=$("#prompt").value.trim();
-  if(!p&&roulette){p=surprise($("#chaos").value);$("#prompt").value=p}
-  if(!p){stat("Write a scene or tap Surprise me.",true);return}
-  setBusy(true);
-  try{wake=await navigator.wakeLock?.request("screen")}catch{}
-  try{do{await generate(p);if(roulette){p=surprise($("#chaos").value);$("#prompt").value=p}}while(roulette)}
-  catch(e){stat(String(e.message||e),true);roulette=false;$("#roulette").textContent="Roulette: off"}
-  setBusy(false);try{wake?.release()}catch{}
+async function send(text){
+  text=(text||"").trim(); if(!text||busy)return;
+  if(!LS("pulse_tok").trim().startsWith("hf_")){showView("v-set");$("#set-msg").className="err";$("#set-msg").textContent="Add your hf_ token and tap Save, then come back.";return}
+  busy=true; $("#send").disabled=true; $("#input").value=""; autoSize($("#input"));
+  messages.push({role:"user",content:text}); await saveMsg({role:"user",content:text,ts:Date.now()}); renderChat();
+  const bubble=appendStreaming();
+  try{
+    const history=messages.map(m=>({role:m.role,content:m.content}));
+    const out=await completeStream(history, t=>{bubble.textContent=t; const sc=$("#chat-scroll");sc.scrollTop=sc.scrollHeight});
+    const streamEl=$("#stream-msg"); if(streamEl)streamEl.classList.remove("streaming");
+    messages.push({role:"assistant",content:out}); await saveMsg({role:"assistant",content:out,ts:Date.now()}); renderChat();
+  }catch(e){
+    const streamEl=$("#stream-msg"); if(streamEl)streamEl.remove();
+    messages.push({role:"assistant",content:"⚠️ "+(e.message||e)}); renderChat();
+  }
+  busy=false; $("#send").disabled=false;
 }
-$("#go").onclick=run;
-$("#roulette").onclick=()=>{roulette=!roulette;$("#roulette").textContent="Roulette: "+(roulette?"on":"off");if(roulette&&!busy)run()};
-renderFeed();
+function autoSize(ta){ta.style.height="auto";ta.style.height=Math.min(120,Math.max(44,ta.scrollHeight))+"px"}
+$("#input").addEventListener("input",e=>autoSize(e.target));
+$("#input").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send($("#input").value)}});
+$("#send").onclick=()=>send($("#input").value);
+$$("#quick [data-q]").forEach(b=>b.onclick=()=>{const q=b.dataset.q;if(q.endsWith(": ")||q.endsWith(":")){$("#input").value=q;$("#input").focus();autoSize($("#input"))}else send(q)});
+(async()=>{try{const stored=await allMsgs();messages=stored.map(m=>({role:m.role,content:m.content}))}catch{}lockInit()})();
 </script>
 </body>
 </html>
