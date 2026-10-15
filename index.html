@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Reel Riot">
+<meta name="theme-color" content="#14091f">
+<meta name="robots" content="noindex,nofollow">
+<title>Reel Riot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#14091f;--bruise:#241238;--bruise2:#33194f;--bone:#f3ead8;--tape:#ffd23f;--hot:#ff3d7f;--dim:#a898bd;
+--disp:"Bricolage Grotesque",ui-rounded,system-ui,sans-serif;--body:ui-rounded,-apple-system,system-ui,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;background:var(--ink);color:var(--bone);font:16px/1.4 var(--body);overscroll-behavior:none}
+body{padding-top:env(safe-area-inset-top)}
+h1,h2{font-family:var(--disp);margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+main{position:fixed;inset:env(safe-area-inset-top) 0 calc(60px + env(safe-area-inset-bottom)) 0}
+.view{display:none;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.view.on{display:block}
+#v-feed.on{display:block;overflow:hidden}
+#feed{height:100%;overflow-y:scroll;scroll-snap-type:y mandatory}
+.reel{height:100%;scroll-snap-align:start;scroll-snap-stop:always;position:relative;background:#000}
+.reel video{width:100%;height:100%;object-fit:cover}
+.cap{position:absolute;left:14px;right:84px;bottom:18px;font-size:15px;text-shadow:0 1px 8px #000}
+.side{position:absolute;right:10px;bottom:18px;display:flex;flex-direction:column;gap:10px}
+.side button{width:52px;height:52px;border-radius:50%;border:0;background:rgba(20,9,31,.72);font-size:22px;backdrop-filter:blur(8px)}
+.side button.fav{background:var(--hot)}
+.empty{height:100%;display:grid;place-content:center;text-align:center;padding:30px;gap:10px;color:var(--dim)}
+.empty h2{color:var(--bone);font-size:30px}
+.pad{padding:18px 16px 30px;display:grid;gap:14px}
+.pad h2{font-size:32px;letter-spacing:-.5px}
+label{display:grid;gap:6px;color:var(--dim);font-size:13px}
+textarea,input,select{background:var(--bruise);border:2px solid var(--bruise2);border-radius:14px;padding:12px;width:100%;color:var(--bone);font-size:16px}
+textarea{min-height:120px;resize:vertical}
+textarea:focus,input:focus,select:focus{outline:3px solid var(--tape);outline-offset:1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:0;border-radius:16px;padding:15px;font-weight:700;background:var(--tape);color:var(--ink);min-height:48px;font-family:var(--disp);font-size:18px}
+.btn.alt{background:var(--bruise2);color:var(--bone)}
+.btn.hot{background:var(--hot);color:#fff}
+.btn:disabled{opacity:.5}
+input[type=range]{padding:0;accent-color:var(--hot);border:0;background:none}
+#stat{background:var(--bruise);border-radius:14px;padding:12px;font-size:14px;color:var(--dim);display:none;white-space:pre-wrap;word-break:break-word}
+#stat.on{display:block}
+#stat.err{color:#ffb0c8;border:2px solid var(--hot)}
+#out video{width:100%;border-radius:16px;background:#000}
+nav{position:fixed;left:0;right:0;bottom:0;height:calc(60px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--bruise);display:flex;border-top:2px solid var(--bruise2)}
+nav button{flex:1;border:0;background:none;color:var(--dim);font-size:13px;display:grid;place-content:center;gap:2px}
+nav button b{font-size:22px;font-weight:400}
+nav button.on{color:var(--tape)}
+#lock{position:fixed;inset:0;z-index:9;background:var(--ink);display:grid;place-content:center;padding:28px;gap:14px;text-align:center}
+#lock h1{font-size:54px;line-height:.95;letter-spacing:-2px;color:var(--tape)}
+#lock p{color:var(--dim);margin:0}
+.hint{font-size:12px;color:var(--dim)}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<div id="lock">
+  <h1>Reel<br>Riot</h1>
+  <p id="lockmsg">Pick a passcode for this phone.</p>
+  <input id="pass" type="password" inputmode="text" autocomplete="off" placeholder="Passcode">
+  <button class="btn" id="unlock">Enter</button>
+</div>
+
+<main>
+  <section id="v-feed" class="view on"><div id="feed"></div></section>
+
+  <section id="v-make" class="view"><div class="pad">
+    <h2>Make a riot</h2>
+    <label>What happens in the video?
+      <textarea id="prompt" placeholder="A pigeon in a tuxedo conducts a thunderstorm over a neon car wash, 35mm film, slow dolly-in"></textarea>
+    </label>
+    <label>Chaos <span id="cv">60</span>
+      <input id="chaos" type="range" min="0" max="100" value="60">
+    </label>
+    <div class="row">
+      <button class="btn hot" id="surprise">Surprise me</button>
+      <button class="btn alt" id="roulette">Roulette: off</button>
+    </div>
+    <div class="row">
+      <label>Shape
+        <select id="ar"><option value="9:16">Vertical 9:16</option><option value="16:9">Wide 16:9</option><option value="1:1">Square 1:1</option></select>
+      </label>
+      <label>Seconds
+        <select id="dur"><option>3</option><option selected>5</option><option>8</option></select>
+      </label>
+    </div>
+    <label>Avoid <input id="neg" placeholder="blurry, text, watermark, distorted"></label>
+    <button class="btn" id="go">Generate</button>
+    <div id="stat"></div>
+    <div id="out"></div>
+  </div></section>
+
+  <section id="v-set" class="view"><div class="pad">
+    <h2>Setup</h2>
+    <label>Hugging Face token (free, starts with hf_)
+      <input id="tok" type="password" placeholder="hf_..." autocomplete="off">
+    </label>
+    <label>Video Space (owner/name)
+      <input id="space" placeholder="owner/space-name" autocapitalize="off" autocorrect="off">
+    </label>
+    <label>Endpoint name (optional)
+      <input id="api" placeholder="/generate_video" autocapitalize="off" autocorrect="off">
+    </label>
+    <label>Parameter overrides (optional JSON)
+      <textarea id="ovr" placeholder='{"num_inference_steps": 25}' style="min-height:70px"></textarea>
+    </label>
+    <button class="btn" id="save">Save</button>
+    <button class="btn alt" id="inspect">Check this Space</button>
+    <div id="info" class="hint" style="white-space:pre-wrap"></div>
+    <p class="hint">Everything stays on this phone: your token, your passcode hash, and your videos. The lock screen keeps casual snoopers out; it is not bank-grade security. Use models and Spaces within their own licenses and rules.</p>
+    <button class="btn alt" id="wipe">Erase all videos</button>
+  </div></section>
+</main>
+
+<nav>
+  <button data-v="feed" class="on"><b>▶</b>Reels</button>
+  <button data-v="make"><b>✦</b>Make</button>
+  <button data-v="set"><b>⚙</b>Setup</button>
+</nav>
+
+<script type="module">
+import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client@2.7.1/+esm";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const LS=k=>localStorage.getItem(k)||"";
+
+/* ---------- lock ---------- */
+const sha=async t=>[...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode("riot:"+t)))].map(b=>b.toString(16).padStart(2,"0")).join("");
+function lockInit(){
+  if(sessionStorage.ok==="1"){$("#lock").remove();return}
+  if(LS("ph"))$("#lockmsg").textContent="Welcome back.";
+  $("#unlock").onclick=async()=>{
+    const v=$("#pass").value; if(!v)return;
+    const h=await sha(v);
+    if(!LS("ph")){localStorage.ph=h}
+    else if(LS("ph")!==h){$("#lockmsg").textContent="Wrong passcode.";return}
+    sessionStorage.ok="1";$("#lock").remove();
+  };
+  $("#pass").addEventListener("keydown",e=>{if(e.key==="Enter")$("#unlock").click()});
+}
+lockInit();
+
+/* ---------- storage (IndexedDB) ---------- */
+const db=new Promise((res,rej)=>{const r=indexedDB.open("riot",1);
+  r.onupgradeneeded=()=>r.result.createObjectStore("v",{keyPath:"id"});
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const tx=async(m,f)=>{const d=await db;return new Promise((res,rej)=>{const t=d.transaction("v",m);const q=f(t.objectStore("v"));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)})};
+const put=o=>tx("readwrite",s=>s.put(o));
+const all=async()=>(await tx("readonly",s=>s.getAll())||[]).sort((a,b)=>b.ts-a.ts);
+const del=id=>tx("readwrite",s=>s.delete(id));
+
+/* ---------- navigation ---------- */
+function show(v){
+  $$(".view").forEach(e=>e.classList.toggle("on",e.id==="v-"+v));
+  $$("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+  if(v==="feed")renderFeed(); else $$("#feed video").forEach(x=>x.pause());
+}
+$$("nav button").forEach(b=>b.onclick=()=>show(b.dataset.v));
+
+/* ---------- feed ---------- */
+let urls=[];
+async function renderFeed(){
+  urls.forEach(URL.revokeObjectURL);urls=[];
+  const feed=$("#feed"),items=await all();
+  if(!items.length){feed.innerHTML='<div class="empty"><h2>No reels yet</h2><p>Open Make, hit Surprise me, and generate your first one.</p></div>';return}
+  feed.innerHTML="";
+  const io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target.querySelector("video");
+    if(e.isIntersecting){v.play().catch(()=>{})}else v.pause()}),{threshold:.7});
+  for(const it of items){
+    const u=URL.createObjectURL(it.blob);urls.push(u);
+    const d=document.createElement("div");d.className="reel";
+    d.innerHTML=`<video src="${u}" playsinline muted loop preload="metadata"></video>
+      <div class="cap"></div>
+      <div class="side"><button class="fav${it.fav?" on":""}" title="Favorite">♥</button><button class="rmx" title="Remix">↻</button><button class="shr" title="Share">⇪</button><button class="dl" title="Delete">✕</button></div>`;
+    d.querySelector(".cap").textContent=it.prompt;
+    const v=d.querySelector("video");
+    v.onclick=()=>{v.muted=!v.muted};
+    d.querySelector(".fav").onclick=async e=>{it.fav=!it.fav;await put(it);e.currentTarget.classList.toggle("fav",it.fav)};
+    if(it.fav)d.querySelector(".fav").classList.add("fav");
+    d.querySelector(".rmx").onclick=()=>{$("#prompt").value=it.prompt;show("make")};
+    d.querySelector(".shr").onclick=()=>shareBlob(it.blob);
+    d.querySelector(".dl").onclick=async()=>{if(confirm("Delete this reel?")){await del(it.id);renderFeed()}};
+    feed.append(d);io.observe(d);
+  }
+}
+async function shareBlob(b){
+  const f=new File([b],"reel-riot.mp4",{type:b.type||"video/mp4"});
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]});
+    else{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="reel-riot.mp4";a.click()}
+  }catch(e){}
+}
+
+/* ---------- chaos prompt grammar (free, offline) ---------- */
+const R=a=>a[Math.floor(Math.random()*a.length)];
+const G={
+ subj:["a pigeon in a tuxedo","a retired astronaut with a lawn mower","a lighthouse keeper made of jelly","three raccoons in a trench coat","a giant glass whale","a grandmother DJ","a samurai on a unicycle","a cathedral-sized houseplant","a tiny dragon doing taxes","a bus full of origami cranes","a chrome octopus","a marching band of snowmen"],
+ act:["conducts a thunderstorm","races a freight train","argues with the moon","bakes a sunrise","escapes from a falling elevator","sings to a herd of neon deer","surfs a wave of spaghetti","opens a door in the sky","chases a runaway shadow","plays chess against the ocean"],
+ place:["over a neon car wash","inside a flooded shopping mall","on a floating island of vinyl records","in a desert made of salt and mirrors","across a rooftop in a monsoon","in an abandoned roller rink","on a frozen highway at midnight","inside a giant snow globe","beneath a sky of paper lanterns"],
+ cam:["slow dolly-in","handheld chase cam","drone orbit","fisheye lens","extreme close-up, macro lens","whip pan","low-angle hero shot","locked-off wide shot"],
+ look:["35mm film grain","VHS glitch","claymation","grainy 70s sci-fi","hyper-real 8k","Studio Ghibli watercolor","neon noir","Super 8 home movie","cel-shaded anime","Kodachrome"],
+ light:["golden hour","strobing neon","moonlit fog","harsh flash photography","sunset through dust","candlelit gloom"],
+ twist:["everything slowly turns upside down","gravity switches off","the colors melt","time loops","confetti erupts in slow motion","a second sun rises","the camera is swallowed by smoke"]
+};
+function surprise(c){
+  const n=+c;let p=`${R(G.subj)} ${R(G.act)} ${R(G.place)}`;
+  p+=`, ${R(G.cam)}, ${R(G.look)}`;
+  if(n>25)p+=`, ${R(G.light)}`;
+  if(n>55)p+=`, then ${R(G.twist)}`;
+  if(n>80)p=`${R(G.subj)} and ${R(G.subj)} ${R(G.act)} ${R(G.place)}; ${p}`;
+  return p;
+}
+$("#chaos").oninput=e=>$("#cv").textContent=e.target.value;
+$("#surprise").onclick=()=>{$("#prompt").value=surprise($("#chaos").value)};
+
+/* ---------- settings ---------- */
+const DEFAULT_SPACE="Lightricks/LTX-2-3";
+function loadSet(){$("#tok").value=LS("tok");$("#space").value=LS("space")||DEFAULT_SPACE;$("#api").value=LS("api");$("#ovr").value=LS("ovr")}
+loadSet();
+$("#save").onclick=()=>{
+  const o=$("#ovr").value.trim();
+  if(o){try{JSON.parse(o)}catch{alert("Overrides must be valid JSON.");return}}
+  localStorage.tok=$("#tok").value.trim();localStorage.space=$("#space").value.trim();
+  localStorage.api=$("#api").value.trim();localStorage.ovr=o;
+  $("#info").textContent="Saved.";
+};
+$("#wipe").onclick=async()=>{if(confirm("Erase every saved video on this phone?")){for(const i of await all())await del(i.id);renderFeed()}};
+
+async function connect(){
+  const space=(LS("space")||DEFAULT_SPACE).trim().replace(/^https?:\/\/huggingface\.co\/spaces\//,"").replace(/\/+$/,"");
+  const tok=LS("tok").trim().replace(/\s+/g,"");
+  const direct=space.startsWith("http")?space:"https://"+space.toLowerCase().replace(/[\/_.]/g,"-")+".hf.space";
+  const tries=[];
+  if(tok.startsWith("hf_"))tries.push([space,{token:tok}],[direct,{token:tok}]);
+  tries.push([space,{}],[direct,{}]);
+  let first=null;
+  for(const [ref,opt] of tries){
+    try{return await Client.connect(ref,opt)}catch(e){first=first||e}
+  }
+  const m=String(first&&first.message||first);
+  throw new Error(m+"\n\nTried your Space with and without the token. Check that the Space name is spelled exactly owner/name and that the token is a fresh one starting with hf_.");
+}
+$("#inspect").onclick=async()=>{
+  $("#info").textContent="Connecting...";
+  try{
+    const app=await connect(),api=await app.view_api();
+    const eps=api.named_endpoints||{};
+    $("#info").textContent="Endpoints found:\n"+Object.keys(eps).map(k=>k+"  ("+eps[k].parameters.map(p=>p.parameter_name).join(", ")+")").join("\n");
+  }catch(e){$("#info").textContent="Could not connect: "+(e.message||e)}
+};
+
+/* ---------- generation ---------- */
+const SIZES={"9:16":[480,832],"16:9":[832,480],"1:1":[640,640]};
+function pickEndpoint(eps){
+  const want=LS("api"),keys=Object.keys(eps);
+  if(want&&eps[want])return want;
+  if(want&&eps["/"+want.replace(/^\//,"")])return "/"+want.replace(/^\//,"");
+  return keys.find(k=>/(t2v|text.?to.?video|generate|video)/i.test(k))||keys[0];
+}
+function buildPayload(params,o){
+  const p={};let usedPrompt=false;
+  for(const q of params){
+    const n=q.parameter_name,l=(q.label||n).toLowerCase()+" "+n.toLowerCase();
+    const isStr=(q.python_type?.type||q.type?.type||"")==="str"||/textbox/.test(q.component||"");
+    let v=q.parameter_has_default?q.parameter_default:null;
+    if(isStr&&/neg/.test(l))v=o.neg;
+    else if(isStr&&!usedPrompt&&/(prompt|text|descr|caption)/.test(l)){v=o.prompt;usedPrompt=true}
+    else if(/seed/.test(l)&&!/rand/.test(l))v=Math.floor(Math.random()*2147483647);
+    else if(/width/.test(l))v=o.w;
+    else if(/height/.test(l))v=o.h;
+    else if(/(duration|seconds|length)/.test(l)&&!/frame/.test(l))v=o.dur;
+    p[n]=v;
+  }
+  if(!usedPrompt){const f=params.find(q=>(q.python_type?.type||"")==="str");if(f)p[f.parameter_name]=o.prompt}
+  let ov={};try{ov=JSON.parse(LS("ovr")||"{}")}catch{}
+  return {...p,...ov};
+}
+function findVideo(d,depth=0){
+  if(!d||depth>6)return null;
+  if(typeof d==="string")return /\.(mp4|mov|webm)(\?|$)/i.test(d)?d:null;
+  if(Array.isArray(d)){for(const x of d){const r=findVideo(x,depth+1);if(r)return r}return null}
+  if(typeof d==="object"){
+    if(d.video){const r=findVideo(d.video,depth+1);if(r)return r}
+    if(d.url&&(/\.(mp4|mov|webm)/i.test(d.url)||/video/.test(d.mime_type||"")||/video/.test(d.orig_name||"")))return d.url;
+    for(const k in d){const r=findVideo(d[k],depth+1);if(r)return r}
+  }
+  return null;
+}
+async function fetchBlob(u){
+  let r;
+  try{r=await fetch(u)}catch{r=await fetch(u,{headers:{Authorization:"Bearer "+LS("tok")}})}
+  if(!r.ok)throw new Error("Download failed ("+r.status+")");
+  const b=await r.blob();
+  return b.type.startsWith("video")?b:new Blob([b],{type:"video/mp4"});
+}
+const stat=(t,err)=>{const s=$("#stat");s.className="on"+(err?" err":"");s.textContent=t};
+let busy=false,roulette=false,wake=null;
+
+async function generate(prompt){
+  const ar=$("#ar").value,[w,h]=SIZES[ar];
+  const o={prompt,neg:$("#neg").value||"blurry, distorted, watermark, text",w,h,dur:+$("#dur").value};
+  stat("Connecting to your Space...");
+  const app=await connect(),api=await app.view_api(),eps=api.named_endpoints||{};
+  const ep=pickEndpoint(eps);
+  if(!ep)throw new Error("That Space has no usable endpoint. Try Check this Space in Setup.");
+  const payload=buildPayload(eps[ep].parameters,o);
+  let result=null;
+  const t0=Date.now();
+  for await(const m of app.submit(ep,payload)){
+    if(m.type==="status"){
+      const q=m.position!=null?"Queue spot "+(m.position+1)+"\n":"";
+      stat(q+(m.stage==="error"?"Error":"Rendering")+"... "+Math.round((Date.now()-t0)/1000)+"s"+(m.eta?"  (about "+Math.round(m.eta)+"s left)":""),m.stage==="error");
+      if(m.stage==="error")throw new Error(m.message||"The Space returned an error. If it mentions quota, wait or use a free token.");
+    }
+    if(m.type==="data")result=m.data;
+  }
+  const u=findVideo(result);
+  if(!u)throw new Error("The Space finished but returned no video I recognise. Set the endpoint name or overrides in Setup.");
+  stat("Saving...");
+  const blob=await fetchBlob(u);
+  await put({id:Date.now()+"-"+Math.random().toString(36).slice(2,6),prompt,blob,ts:Date.now(),fav:false});
+  const v=document.createElement("video");v.src=URL.createObjectURL(blob);v.controls=true;v.playsInline=true;v.autoplay=true;v.muted=true;v.loop=true;
+  $("#out").replaceChildren(v);
+  stat("Done. It's in your Reels.");
+}
+async function run(){
+  if(busy)return;
+  let p=$("#prompt").value.trim();
+  if(!p&&roulette){p=surprise($("#chaos").value);$("#prompt").value=p}
+  if(!p){stat("Write a prompt or tap Surprise me.",true);return}
+  busy=true;$("#go").disabled=true;
+  try{wake=await navigator.wakeLock?.request("screen")}catch{}
+  try{
+    do{
+      await generate(p);
+      if(roulette){p=surprise($("#chaos").value);$("#prompt").value=p}
+    }while(roulette);
+  }catch(e){stat(String(e.message||e),true);roulette=false;$("#roulette").textContent="Roulette: off"}
+  busy=false;$("#go").disabled=false;try{wake?.release()}catch{}
+}
+$("#go").onclick=run;
+$("#roulette").onclick=()=>{
+  roulette=!roulette;$("#roulette").textContent="Roulette: "+(roulette?"on":"off");
+  if(roulette&&!busy)run();
+};
+renderFeed();
+</script>
+</body>
+</html>
