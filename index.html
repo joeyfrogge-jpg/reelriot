@@ -1,1 +1,398 @@
-PLACEHOLDER_WILL_FAIL
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pulse">
+<meta name="theme-color" content="#0a0a0f">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="robots" content="noindex,nofollow">
+<title>Pulse — AI Video</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--panel:#12121a;--elev:#1a1a24;--line:#2a2a38;--text:#f4f2ff;--muted:#8b87a0;--accent:#a78bfa;--accent2:#22d3ee;--hot:#fb7185;--ok:#34d399;--font:"Instrument Sans",system-ui,sans-serif;--radius:18px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:16px/1.45 var(--font);overscroll-behavior:none}
+body{padding-top:env(safe-area-inset-top)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+#lock{position:fixed;inset:0;z-index:20;background:var(--bg);display:grid;place-content:center;padding:28px;gap:16px;text-align:center}
+#lock .mark{width:72px;height:72px;border-radius:22px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-content:center;font-size:32px;font-weight:700;margin:0 auto;color:#0a0a0f}
+#lock h1{margin:0;font-size:36px;letter-spacing:-.04em}
+#lock p{margin:0;color:var(--muted);max-width:260px;justify-self:center}
+#lock input{width:min(280px,100%);justify-self:center;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:17px}
+#lock .btn{width:min(280px,100%);justify-self:center}
+header{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:rgba(10,10,15,.9);backdrop-filter:blur(12px);z-index:5}
+header .brand{display:flex;align-items:center;gap:10px}
+header .logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-content:center;font-weight:700;color:#0a0a0f;font-size:15px}
+header h1{margin:0;font-size:17px;font-weight:600}
+header .sub{font-size:11px;color:var(--muted)}
+header .icon-btn{width:40px;height:40px;border-radius:12px;background:var(--panel);border:1px solid var(--line);display:grid;place-content:center;color:var(--muted);font-size:18px}
+.view{display:none;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.view.on{display:block}
+.pad{padding:16px 16px calc(24px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;display:grid;gap:14px}
+.pad h2{margin:0;font-size:26px;letter-spacing:-.03em}
+.lead{margin:0;color:var(--muted);font-size:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:grid;gap:12px}
+label{display:grid;gap:6px;font-size:13px;font-weight:600;color:var(--muted)}
+label .help{font-weight:400;opacity:.85}
+textarea,input,select{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;width:100%;font-size:16px;color:var(--text)}
+textarea{min-height:100px;resize:vertical;line-height:1.4}
+textarea:focus,input:focus,select:focus{outline:none;border-color:var(--accent)}
+.dur-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.dur-grid button{padding:12px 8px;border-radius:14px;background:var(--elev);border:1.5px solid var(--line);color:var(--muted);font-weight:600;font-size:14px}
+.dur-grid button.on{border-color:var(--accent);color:var(--text);background:rgba(167,139,250,.12)}
+.mode-label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-top:4px}
+.mode-label.exp{color:#fbbf24}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:12px 16px;border-radius:16px;font-weight:700;font-size:16px;background:linear-gradient(135deg,var(--accent),#7c3aed);color:#fff}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn.alt{background:var(--elev);border:1px solid var(--line);color:var(--text);font-weight:600}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-size:14px;min-height:44px}
+.btn.danger{color:var(--hot);border-color:rgba(251,113,133,.35)}
+.btn .spin{width:18px;height:18px;border:2.5px solid #fff;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.btn.busy .spin{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+#stat{display:none;border-radius:14px;padding:14px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-break:break-word;background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+#stat.on{display:block}
+#stat.err{color:#ffb0c8;border-color:var(--hot);background:rgba(251,113,133,.08)}
+#stat.ok{color:var(--ok);border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.08)}
+#out{display:none}
+#out.on{display:block}
+#out video{width:100%;border-radius:16px;background:#000;max-height:55vh}
+.seg-list{display:grid;gap:10px;margin-top:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 12px;border-radius:999px;background:var(--elev);border:1px solid var(--line);font-size:12.5px;font-weight:500;color:var(--muted)}
+.chip:active{border-color:var(--accent);color:var(--accent)}
+.status{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;font-size:12px;font-weight:600;background:var(--elev);color:var(--muted);border:1px solid var(--line)}
+.pill.ok{color:var(--ok);border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.08)}
+.pill.warn{color:#fbbf24;border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.08)}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.hint{font-size:12px;color:var(--muted);line-height:1.45;margin:0}
+nav{position:fixed;left:0;right:0;bottom:0;padding:8px 0 calc(8px + env(safe-area-inset-bottom));background:rgba(18,18,26,.94);backdrop-filter:blur(14px);display:flex;border-top:1px solid var(--line);z-index:5}
+nav button{flex:1;border:0;background:none;color:var(--muted);font-size:11px;font-weight:600;display:grid;place-content:center;gap:2px;padding:6px}
+nav button b{font-size:20px;line-height:1;font-weight:400}
+nav button.on{color:var(--accent)}
+main{position:fixed;inset:env(safe-area-inset-top) 0 calc(56px + env(safe-area-inset-bottom)) 0;display:flex;flex-direction:column}
+</style>
+</head>
+<body>
+<div id="lock">
+  <div class="mark">P</div>
+  <h1>Pulse</h1>
+  <p id="lockmsg">Pick a short passcode for this phone.</p>
+  <input id="pass" type="password" inputmode="text" autocomplete="off" placeholder="Passcode" aria-label="Passcode">
+  <button class="btn" id="unlock" type="button">Enter</button>
+</div>
+<main id="app" hidden>
+  <header>
+    <div class="brand"><div class="logo">P</div><div><h1>Pulse</h1><div class="sub">AI Video · Multi-clip</div></div></div>
+    <button class="icon-btn" id="btn-set" type="button" aria-label="Settings">⚙</button>
+  </header>
+  <section class="view on" id="v-make">
+    <div class="pad">
+      <h2>Make a video</h2>
+      <p class="lead">One prompt → one clip, or a chain of 10s scenes that flow into a longer film.</p>
+      <div class="card">
+        <label>Scene<textarea id="prompt" placeholder="A golden retriever surfing a turquoise wave at sunset, cinematic, continuous camera move" rows="4"></textarea></label>
+        <div class="chips" id="ideas">
+          <button class="chip" type="button" data-p="Neon rain on empty Tokyo streets at night, reflections, continuous tracking shot, cinematic">Neon rain</button>
+          <button class="chip" type="button" data-p="A red balloon floating over meadows and hills, continuous journey, soft morning light">Balloon journey</button>
+          <button class="chip" type="button" data-p="Coffee steam rising then the camera slowly pulls back through a sunlit kitchen, continuous">Coffee pull-back</button>
+        </div>
+      </div>
+      <label>Format
+        <select id="ar"><option value="9:16">Vertical (phone)</option><option value="16:9">Wide</option><option value="1:1">Square</option></select>
+      </label>
+      <div class="mode-label">Default</div>
+      <div class="dur-grid" id="dur-default">
+        <button type="button" data-sec="5" class="on">5 sec</button>
+        <button type="button" data-sec="10">10 sec</button>
+        <button type="button" data-sec="20">20 sec</button>
+      </div>
+      <div class="mode-label exp">Longer (experimental)</div>
+      <div class="dur-grid" id="dur-long">
+        <button type="button" data-sec="30">30 sec<br><span style="font-size:11px;font-weight:500;opacity:.7">3×10s</span></button>
+        <button type="button" data-sec="60">60 sec<br><span style="font-size:11px;font-weight:500;opacity:.7">6×10s</span></button>
+        <button type="button" data-sec="120">120 sec<br><span style="font-size:11px;font-weight:500;opacity:.7">12×10s</span></button>
+      </div>
+      <p class="hint" id="dur-hint">Single clip · ~5 seconds</p>
+      <button class="btn" id="go" type="button"><span class="spin"></span><span class="txt">Generate video</span></button>
+      <div id="stat" role="status" aria-live="polite"></div>
+      <div id="out"></div>
+    </div>
+  </section>
+  <section class="view" id="v-feed"><div class="pad"><h2>Your videos</h2><p class="lead">Saved on this phone only.</p><div id="feed"></div></div></section>
+  <section class="view" id="v-set">
+    <div class="pad">
+      <h2>Settings</h2>
+      <p class="lead">Your Hugging Face token powers free video models.</p>
+      <div class="status"><span class="pill" id="pill-tok"><span class="dot"></span> Token</span></div>
+      <div class="card">
+        <label>Hugging Face token<span class="help">Free · starts with hf_</span>
+          <input id="tok" type="password" placeholder="hf_…" autocomplete="off" autocapitalize="off">
+        </label>
+        <button class="btn" id="save" type="button">Save</button>
+        <button class="btn alt" id="test" type="button">Test connection</button>
+        <div id="set-msg" class="hint"></div>
+      </div>
+      <p class="hint">Longer mode generates linked 10s clips in order (smooth story beats), then stitches them for continuous playback.</p>
+      <button class="btn ghost danger" id="wipe" type="button">Erase all videos</button>
+    </div>
+  </section>
+</main>
+<nav id="nav" hidden>
+  <button data-v="make" class="on" type="button"><b>✦</b>Make</button>
+  <button data-v="feed" type="button"><b>▶</b>Library</button>
+  <button data-v="set" type="button"><b>⚙</b>Setup</button>
+</nav>
+<script type="module">
+import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client@1.14.2/+esm";
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+const LS=k=>localStorage.getItem(k)||"";
+const sha=async t=>[...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode("pulse:"+t)))].map(b=>b.toString(16).padStart(2,"0")).join("");
+async function lockInit(){
+  if(sessionStorage.pulse_ok==="1"){showApp();return}
+  if(LS("pulse_ph"))$("#lockmsg").textContent="Welcome back — enter your passcode.";
+  $("#unlock").onclick=async()=>{const v=$("#pass").value;if(!v)return;const h=await sha(v);if(!LS("pulse_ph"))localStorage.pulse_ph=h;else if(LS("pulse_ph")!==h){$("#lockmsg").textContent="Wrong passcode.";return}sessionStorage.pulse_ok="1";showApp()};
+  $("#pass").addEventListener("keydown",e=>{if(e.key==="Enter")$("#unlock").click()});
+}
+function showApp(){$("#lock").remove();$("#app").hidden=false;$("#nav").hidden=false;loadSet();refreshPills();renderFeed()}
+const dbp=new Promise((res,rej)=>{const r=indexedDB.open("pulse-vid",2);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains("v"))d.createObjectStore("v",{keyPath:"id"})};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const tx=async(m,f)=>{const d=await dbp;return new Promise((res,rej)=>{const t=d.transaction("v",m);const q=f(t.objectStore("v"));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)})};
+const put=o=>tx("readwrite",s=>s.put(o));
+const all=async()=>(await tx("readonly",s=>s.getAll())||[]).sort((a,b)=>b.ts-a.ts);
+const del=id=>tx("readwrite",s=>s.delete(id));
+function show(v){$$(".view").forEach(e=>e.classList.toggle("on",e.id==="v-"+v));$$("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));if(v==="feed")renderFeed();if(v==="set")refreshPills()}
+$$("nav button").forEach(b=>b.onclick=()=>show(b.dataset.v));
+$("#btn-set").onclick=()=>show("set");
+$$("#ideas [data-p]").forEach(b=>b.onclick=()=>{$("#prompt").value=b.dataset.p;$("#prompt").focus()});
+let selectedSec=5;
+function setSec(sec){
+  selectedSec=sec;
+  $$("#dur-default button, #dur-long button").forEach(b=>b.classList.toggle("on",+b.dataset.sec===sec));
+  const n=Math.max(1,Math.round(sec/10));
+  if(sec<=20)$("#dur-hint").textContent=sec<=10?("Single clip · ~"+sec+" seconds"):("May use 2 linked clips · ~"+sec+"s");
+  else $("#dur-hint").textContent="Experimental · "+n+"×10s linked scenes → ~"+sec+"s continuous film";
+}
+$$("#dur-default button, #dur-long button").forEach(b=>b.onclick=()=>setSec(+b.dataset.sec));
+setSec(5);
+function loadSet(){$("#tok").value=LS("pulse_tok")}
+function refreshPills(){const tok=LS("pulse_tok").trim().startsWith("hf_");const p=$("#pill-tok");p.className="pill "+(tok?"ok":"warn");p.innerHTML=`<span class="dot"></span> ${tok?"Token ready":"Add token"}`}
+$("#save").onclick=()=>{localStorage.pulse_tok=$("#tok").value.trim();$("#set-msg").textContent="Saved.";$("#set-msg").style.color="var(--ok)";refreshPills()};
+$("#test").onclick=async()=>{$("#set-msg").style.color="var(--muted)";$("#set-msg").textContent="Connecting…";try{const app=await connectSpace("Lightricks/LTX-2-3");await app.view_api();$("#set-msg").style.color="var(--ok)";$("#set-msg").textContent="Connected. Ready."}catch(e){$("#set-msg").style.color="var(--hot)";$("#set-msg").textContent=String(e.message||e)}};
+$("#wipe").onclick=async()=>{if(!confirm("Erase every saved video?"))return;for(const i of await all())await del(i.id);renderFeed();show("feed")};
+async function connectSpace(name){
+  const tok=LS("pulse_tok").trim();
+  if(!tok.startsWith("hf_"))throw new Error("Add your hf_ token in Setup first.");
+  const direct="https://"+name.toLowerCase().replace(/[/_.]+/g,"-")+".hf.space";
+  let last;
+  for(const ref of [name,direct]){try{return await Client.connect(ref,{hf_token:tok})}catch(e){last=e}}
+  for(const ref of [name,direct]){try{return await Client.connect(ref,{token:tok})}catch(e){last=e}}
+  throw last||new Error("Could not connect to "+name);
+}
+function findVideo(data,spaceUrl){
+  const out=[];
+  const walk=(x,d=0)=>{
+    if(x==null||d>10)return;
+    if(typeof x==="string"){
+      if(/^https?:\/\//i.test(x)||/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(x)||x.includes("/file=")||x.startsWith("/tmp"))out.push(x);
+      return;
+    }
+    if(Array.isArray(x)){x.forEach(i=>walk(i,d+1));return}
+    if(typeof x==="object"){if(x.url)out.push(x.url);if(x.path)out.push(x.path);for(const k of Object.keys(x))walk(x[k],d+1)}
+  };
+  walk(data);
+  for(const u of out){
+    if(/^https?:\/\//i.test(u)&&/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(u))return u;
+    if(/^https?:\/\//i.test(u)&&!/\.(png|jpe?g|gif|webp|json)(\?|$)/i.test(u))return u;
+  }
+  for(const u of out){
+    if(!u)continue;
+    const base=spaceUrl.replace(/\/$/,"");
+    if(u.startsWith("http"))return u;
+    if(u.includes("file=")||u.startsWith("/tmp")||u.startsWith("tmp/")){
+      const path=u.replace(/^\/?file=/,"");
+      return base+"/gradio_api/file="+path;
+    }
+    if(u.startsWith("/"))return base+u;
+  }
+  return null;
+}
+async function fetchBlob(url){
+  const tok=LS("pulse_tok").trim();
+  const headers=tok.startsWith("hf_")?{Authorization:"Bearer "+tok}:{};
+  const r=await fetch(url,{headers});
+  if(!r.ok)throw new Error("Download failed ("+r.status+")");
+  const b=await r.blob();
+  return b.type&&b.type.startsWith("video")?b:new Blob([b],{type:"video/mp4"});
+}
+function hqSize(ar){
+  const map={"9:16":[512,768],"16:9":[768,512],"1:1":[640,640]};
+  return map[ar]||map["9:16"];
+}
+function segmentPrompts(base,totalSec){
+  const n=Math.max(1,Math.round(totalSec/10));
+  const beats=[];
+  for(let i=0;i<n;i++){
+    const bridge=i===0?"establishing shot, begin the scene":"smooth continuous motion from the previous moment, same camera language, same lighting and subject, no cut feel, seamless transition";
+    const arc=n===1?"":` Part ${i+1} of ${n} in a continuous ${totalSec}-second sequence.`;
+    beats.push(`${base}. ${bridge}.${arc} Cinematic, consistent style, highly detailed, flowing motion.`);
+  }
+  return beats;
+}
+const BACKENDS=[
+  {id:"ltx23",label:"LTX-2",space:"Lightricks/LTX-2-3",maxDur:10,
+    async run(app,prompt,ar,dur){
+      const d=Math.min(+dur||10,10);const pair=hqSize(ar);const w=pair[0],h=pair[1];const seed=Math.floor(Math.random()*1e9);
+      try{const result=await app.predict("/generate_video",[null,prompt,d,false,seed,true,h,w]);return result&&result.data!==undefined?result.data:result;}
+      catch(e){const result=await app.predict("/generate_video",{prompt:prompt,duration:d,enhance_prompt:false,seed:seed,randomize_seed:true,height:h,width:w});return result&&result.data!==undefined?result.data:result;}
+    }},
+  {id:"ltx-dist",label:"LTX distilled",space:"Lightricks/ltx-video-distilled",maxDur:10,
+    async run(app,prompt,ar,dur){
+      const d=Math.min(+dur||10,10);const pair=hqSize(ar);const w=pair[0],h=pair[1];const seed=Math.floor(Math.random()*1e9);
+      try{const result=await app.predict("/text_to_video",[prompt,"blurry, low quality, watermark, hard cut, jump cut",null,null,h,w,"text_to_video",d,9,seed,true,4,true]);return result&&result.data!==undefined?result.data:result;}
+      catch(e){const result=await app.predict("/text_to_video",{prompt:prompt,negative_prompt:"blurry, low quality, watermark",height_ui:h,width_ui:w,mode:"text_to_video",duration_ui:d,seed_ui:seed,randomize_seed:true});return result&&result.data!==undefined?result.data:result;}
+    }},
+  {id:"wan",label:"Wan",space:"multimodalart/wan2-1-fast",maxDur:10,
+    async run(app,prompt,ar,dur){
+      const d=Math.min(+dur||10,10);const pair=hqSize(ar);const w=pair[0],h=pair[1];const seed=Math.floor(Math.random()*1e9);
+      try{const result=await app.predict("/generate_video",[null,prompt,h,w,"blurry, low quality, watermark, hard cut",d,5,24,seed,true]);return result&&result.data!==undefined?result.data:result;}
+      catch(e){const result=await app.predict("/generate_video",{prompt:prompt,height:h,width:w,negative_prompt:"blurry, low quality",duration_seconds:d,guidance_scale:5,steps:24,seed:seed,randomize_seed:true});return result&&result.data!==undefined?result.data:result;}
+    }},
+  {id:"zeroscope",label:"Zeroscope",space:"hysts/zeroscope-v2",maxDur:10,
+    async run(app,prompt,ar,dur){
+      const frames=Math.min(48,Math.max(24,Math.round((+dur||10)*4)));const seed=Math.floor(Math.random()*1e9);
+      const result=await app.predict("/run",[prompt,seed,frames,35]);return result&&result.data!==undefined?result.data:result;
+    }}
+];
+async function genOneClip(prompt,ar,segDur){
+  let lastErr;
+  for(const b of BACKENDS){
+    try{
+      const app=await connectSpace(b.space);
+      const spaceUrl="https://"+b.space.toLowerCase().replace(/[/_.]+/g,"-")+".hf.space";
+      const data=await b.run(app,prompt,ar,Math.min(segDur,b.maxDur||10));
+      const url=findVideo(data,spaceUrl);
+      if(!url){lastErr=b.label+": no video";continue}
+      const blob=await fetchBlob(url);
+      return {blob,backend:b.id,label:b.label};
+    }catch(e){lastErr=b.label+": "+(e.message||e)}
+  }
+  throw new Error(lastErr||"All backends failed");
+}
+async function stitchBlobs(blobs,onProg){
+  if(blobs.length===1)return blobs[0];
+  const videos=await Promise.all(blobs.map(b=>{
+    const v=document.createElement("video");
+    v.src=URL.createObjectURL(b);
+    v.muted=true;v.playsInline=true;
+    return new Promise((res,rej)=>{v.onloadedmetadata=()=>res(v);v.onerror=()=>rej(new Error("Video load failed"))});
+  }));
+  const w=videos[0].videoWidth||640,h=videos[0].videoHeight||360;
+  const canvas=document.createElement("canvas");
+  canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext("2d");
+  const stream=canvas.captureStream(24);
+  const mime=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":MediaRecorder.isTypeSupported("video/webm")?"video/webm":"video/mp4";
+  const chunks=[];
+  const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:2500000});
+  rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  const done=new Promise(r=>{rec.onstop=()=>r()});
+  rec.start(200);
+  for(let i=0;i<videos.length;i++){
+    const v=videos[i];
+    if(onProg)onProg(i+1,videos.length);
+    await new Promise((res,rej)=>{
+      v.currentTime=0;
+      const draw=()=>{if(v.ended||v.paused){res();return}ctx.drawImage(v,0,0,w,h);requestAnimationFrame(draw)};
+      v.onended=()=>res();
+      v.onerror=()=>rej(new Error("Playback error"));
+      v.play().then(()=>requestAnimationFrame(draw)).catch(rej);
+    });
+  }
+  rec.stop();
+  await done;
+  videos.forEach(v=>URL.revokeObjectURL(v.src));
+  return new Blob(chunks,{type:chunks[0]&&chunks[0].type||"video/webm"});
+}
+const stat=(t,err,ok)=>{const s=$("#stat");s.className="on"+(err?" err":ok?" ok":"");s.textContent=t};
+let busy=false;
+async function generate(){
+  if(busy)return;
+  const prompt=$("#prompt").value.trim();
+  if(!prompt){stat("Write a scene description first.",true);return}
+  if(!LS("pulse_tok").trim().startsWith("hf_")){show("set");$("#set-msg").style.color="var(--hot)";$("#set-msg").textContent="Paste your hf_ token and tap Save.";return}
+  busy=true;const btn=$("#go");btn.disabled=true;btn.classList.add("busy");$("#out").classList.remove("on");$("#out").innerHTML="";
+  const ar=$("#ar").value;
+  const totalSec=selectedSec;
+  const segs=segmentPrompts(prompt,totalSec);
+  const segDur=totalSec<=5?5:10;
+  const blobs=[];
+  try{
+    for(let i=0;i<segs.length;i++){
+      stat("Scene "+(i+1)+"/"+segs.length+" · generating ~"+segDur+"s\n(linked continuous story)…");
+      const clip=await genOneClip(segs[i],ar,segDur);
+      blobs.push(clip.blob);
+      stat("Scene "+(i+1)+"/"+segs.length+" done via "+clip.label+(i<segs.length-1?"\nStarting next linked scene…":""));
+    }
+    let finalBlob=blobs[0];
+    if(blobs.length>1){
+      stat("Stitching "+blobs.length+" scenes into one continuous video…");
+      try{finalBlob=await stitchBlobs(blobs,(a,b)=>stat("Stitching scene "+a+"/"+b+"…"));}
+      catch(e){finalBlob=null}
+    }
+    const id=Date.now()+"-"+Math.random().toString(36).slice(2,6);
+    if(finalBlob){
+      await put({id,prompt,blob:finalBlob,ts:Date.now(),segments:blobs.length,totalSec});
+      const v=document.createElement("video");
+      v.src=URL.createObjectURL(finalBlob);v.controls=true;v.playsInline=true;v.autoplay=true;v.muted=true;v.loop=true;
+      $("#out").replaceChildren(v);
+    }else{
+      await put({id,prompt,blob:blobs[0],ts:Date.now(),segments:blobs.length,totalSec});
+      const wrap=document.createElement("div");
+      wrap.className="seg-list";
+      const main=document.createElement("video");
+      main.controls=true;main.playsInline=true;main.autoplay=true;main.muted=true;
+      let idx=0;
+      const urls=blobs.map(b=>URL.createObjectURL(b));
+      main.src=urls[0];
+      main.onended=()=>{idx++;if(idx<urls.length){main.src=urls[idx];main.play()}else{idx=0;main.src=urls[0]}};
+      wrap.append(main);
+      const note=document.createElement("p");
+      note.className="hint";
+      note.textContent=blobs.length+" linked scenes · auto-plays next for continuous film";
+      wrap.append(note);
+      $("#out").replaceChildren(wrap);
+    }
+    $("#out").classList.add("on");
+    stat("Done · "+segs.length+" scene"+(segs.length>1?"s":"")+" · ~"+totalSec+"s target.\nOpen Library to rewatch.",false,true);
+  }catch(e){
+    stat("Failed: "+(e.message||e)+"\n\nIf longer mode stops mid-way, try Default 10s first or wait for GPU quota.",true);
+  }
+  busy=false;btn.disabled=false;btn.classList.remove("busy");
+}
+$("#go").onclick=generate;
+async function renderFeed(){
+  const feed=$("#feed");const items=await all();
+  if(!items.length){feed.innerHTML='<p class="hint">No videos yet. Generate one on the Make tab.</p>';return}
+  feed.innerHTML="";
+  for(const it of items){
+    const u=URL.createObjectURL(it.blob);
+    const d=document.createElement("div");d.className="card";d.style.marginBottom="12px";
+    d.innerHTML='<video src="'+u+'" controls playsinline style="width:100%;border-radius:12px;background:#000"></video><p class="hint" style="margin:0"></p><button class="btn ghost danger" type="button" style="min-height:40px">Delete</button>';
+    d.querySelector(".hint").textContent=it.prompt+(it.segments>1?" · "+it.segments+" scenes":"");
+    d.querySelector("button").onclick=async()=>{await del(it.id);renderFeed()};
+    feed.append(d);
+  }
+}
+lockInit();
+</script>
+</body>
+</html>
