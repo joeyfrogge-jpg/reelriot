@@ -283,16 +283,25 @@ function buildPayload(params,o){
   let ov={};try{ov=JSON.parse(LS("ovr")||"{}")}catch{}
   return {...p,...ov};
 }
-function findVideo(d,depth=0){
-  if(!d||depth>6)return null;
-  if(typeof d==="string")return /\.(mp4|mov|webm)(\?|$)/i.test(d)?d:null;
-  if(Array.isArray(d)){for(const x of d){const r=findVideo(x,depth+1);if(r)return r}return null}
-  if(typeof d==="object"){
-    if(d.video){const r=findVideo(d.video,depth+1);if(r)return r}
-    if(d.url&&(/\.(mp4|mov|webm)/i.test(d.url)||/video/.test(d.mime_type||"")||/video/.test(d.orig_name||"")))return d.url;
-    for(const k in d){const r=findVideo(d[k],depth+1);if(r)return r}
+const VEXT=/\.(mp4|mov|webm|m4v|mkv)(\?|#|$)/i;
+function collectFiles(d,out,depth=0){
+  if(d==null||depth>8)return out;
+  if(typeof d==="string"){
+    if(/^https?:\/\//i.test(d)||/^\/?file=/.test(d)||VEXT.test(d))out.push({url:d,str:true});
+    return out;
   }
-  return null;
+  if(Array.isArray(d)){d.forEach(x=>collectFiles(x,out,depth+1));return out}
+  if(typeof d==="object"){
+    if(d.url||d.path)out.push({url:d.url||null,path:d.path||null,name:d.orig_name||"",mime:d.mime_type||""});
+    for(const k in d)if(typeof d[k]==="object"||typeof d[k]==="string")collectFiles(d[k],out,depth+1);
+  }
+  return out;
+}
+function findVideo(d){
+  const f=collectFiles(d,[]);
+  const isVid=x=>VEXT.test(x.url||"")||VEXT.test(x.path||"")||VEXT.test(x.name||"")||/video/i.test(x.mime||"");
+  const hit=f.find(x=>isVid(x)&&x.url)||f.find(x=>x.url&&x.url.startsWith("http")&&!/\.(png|jpe?g|gif|webp|json|txt)(\?|$)/i.test(x.url));
+  return hit?hit.url:null;
 }
 async function fetchBlob(u){
   let r;
@@ -323,7 +332,10 @@ async function generate(prompt){
     if(m.type==="data")result=m.data;
   }
   const u=findVideo(result);
-  if(!u)throw new Error("The Space finished but returned no video I recognise. Set the endpoint name or overrides in Setup.");
+  if(!u){
+    let raw="";try{raw=JSON.stringify(result)}catch{raw=String(result)}
+    throw new Error("The Space finished but returned no video I recognise.\nEndpoint used: "+ep+"\nSent: "+JSON.stringify(payload).slice(0,300)+"\nGot: "+raw.slice(0,500)+"\n\nIf the endpoint looks wrong, set the endpoint name in Setup (Check this Space lists them).");
+  }
   stat("Saving...");
   const blob=await fetchBlob(u);
   await put({id:Date.now()+"-"+Math.random().toString(36).slice(2,6),prompt,blob,ts:Date.now(),fav:false});
